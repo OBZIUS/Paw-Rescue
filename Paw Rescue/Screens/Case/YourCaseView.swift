@@ -231,28 +231,13 @@ struct YourCaseView: View {
                     }
                     
                     // Pinned Bottom Action Buttons — adapt based on role
-                    if isReporter && !isRescuer {
-                        // Reporter sees just a dismiss (they don't rescue their own dog)
-                        Button {
-                            dismiss()
-                        } label: {
-                            Text("Got it")
-                                .font(AppFonts.button())
-                                .foregroundColor(AppColors.black)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: AppConstants.buttonHeight)
-                                .background(AppColors.secondaryCream)
-                                .clipShape(Capsule())
-                        }
-                        .buttonStyle(.plain)
-                        .padding(.horizontal, AppConstants.horizontalPadding)
-                    } else {
-                        // Rescuer sees Can't Help + Mark as Done
-                        HStack(spacing: AppConstants.spacingM) {
+                    Group {
+                        if isReporter && !isRescuer {
+                            // Reporter sees just a dismiss (they don't rescue their own dog)
                             Button {
-                                showCantHelpSheet = true
+                                dismiss()
                             } label: {
-                                Text("Can't help")
+                                Text("Got it")
                                     .font(AppFonts.button())
                                     .foregroundColor(AppColors.black)
                                     .frame(maxWidth: .infinity)
@@ -261,22 +246,39 @@ struct YourCaseView: View {
                                     .clipShape(Capsule())
                             }
                             .buttonStyle(.plain)
-                            
-                            Button {
-                                showThankYouDialog = true
-                            } label: {
-                                Text("Mark as done")
-                                    .font(AppFonts.button())
-                                    .foregroundColor(.white)
-                                    .frame(maxWidth: .infinity)
-                                    .frame(height: AppConstants.buttonHeight)
-                                    .background(AppColors.primaryBlue)
-                                    .clipShape(Capsule())
-                                    .shadow(color: AppColors.primaryBlue.opacity(0.3), radius: 8, x: 0, y: 4)
+                            .padding(.horizontal, AppConstants.horizontalPadding)
+                        } else {
+                            // Rescuer sees Can't Help + Mark as Done
+                            HStack(spacing: AppConstants.spacingM) {
+                                Button {
+                                    showCantHelpSheet = true
+                                } label: {
+                                    Text("Can't help")
+                                        .font(AppFonts.button())
+                                        .foregroundColor(AppColors.black)
+                                        .frame(maxWidth: .infinity)
+                                        .frame(height: AppConstants.buttonHeight)
+                                        .background(AppColors.secondaryCream)
+                                        .clipShape(Capsule())
+                                }
+                                .buttonStyle(.plain)
+                                
+                                Button {
+                                    showThankYouDialog = true
+                                } label: {
+                                    Text("Mark as done")
+                                        .font(AppFonts.button())
+                                        .foregroundColor(.white)
+                                        .frame(maxWidth: .infinity)
+                                        .frame(height: AppConstants.buttonHeight)
+                                        .background(AppColors.primaryBlue)
+                                        .clipShape(Capsule())
+                                        .shadow(color: AppColors.primaryBlue.opacity(0.3), radius: 8, x: 0, y: 4)
+                                }
+                                .buttonStyle(.plain)
                             }
-                            .buttonStyle(.plain)
+                            .padding(.horizontal, AppConstants.horizontalPadding)
                         }
-                        .padding(.horizontal, AppConstants.horizontalPadding)
                     }
                     .padding(.top, 12)
                     .padding(.bottom, AppConstants.spacingHuge)

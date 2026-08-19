@@ -124,9 +124,7 @@
 				E10007 /* Screens */,
 				E10015 /* Resources */,
 				B10025 /* Assets.xcassets */,
-				CC1AD32830366A0D00B0E198 /* AuthManager.swift */,
-				CC1AD32930366A0D00B0E198 /* CloudKitManager.swift */,
-				CC1AD32A30366A0D00B0E198 /* ImageCacheManager.swift */,
+				E10018 /* Services */,
 			);
 			path = "Paw Rescue";
 			sourceTree = "<group>";
@@ -279,6 +277,16 @@
 				B10036 /* RescuedDogsGridView.swift */,
 			);
 			path = Profile;
+			sourceTree = "<group>";
+		};
+		E10018 /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				CC1AD32830366A0D00B0E198 /* AuthManager.swift */,
+				CC1AD32930366A0D00B0E198 /* CloudKitManager.swift */,
+				CC1AD32A30366A0D00B0E198 /* ImageCacheManager.swift */,
+			);
+			path = Services;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
