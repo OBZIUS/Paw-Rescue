@@ -7,6 +7,24 @@ struct DogDetailSheet: View {
     @Binding var isPresented: Bool
     var onHelpTapped: (DogReport) -> Void
     
+    private var currentUserID: String { AuthManager.shared.currentUserID }
+    
+    /// True if the current user is the one who reported this dog
+    private var isCurrentUserReporter: Bool {
+        !currentUserID.isEmpty && report.reporterUserID == currentUserID
+    }
+    
+    /// True if the current user is the one who accepted this rescue
+    private var isCurrentUserRescuer: Bool {
+        !currentUserID.isEmpty && report.rescuerUserID == currentUserID
+    }
+    
+    /// True if someone (not the current user) has already accepted the case
+    private var isTakenByOther: Bool {
+        guard let rescuerID = report.rescuerUserID, !rescuerID.isEmpty else { return false }
+        return rescuerID != currentUserID
+    }
+    
     var body: some View {
         NavigationStack {
             ScrollView(showsIndicators: false) {
@@ -71,7 +89,7 @@ struct DogDetailSheet: View {
                         
                         Spacer()
                         
-                        // Urgency Badge (e.g. Red dot Emergency)
+                        // Urgency Badge
                         HStack(spacing: 6) {
                             Circle()
                                 .fill(report.urgency.color)
@@ -85,6 +103,46 @@ struct DogDetailSheet: View {
                         .background(report.urgency.color.opacity(0.12), in: Capsule())
                     }
                     .padding(.horizontal, AppConstants.horizontalPadding)
+                    
+                    // MARK: - Rescuer Status Banner
+                    // Shows when someone has accepted the case
+                    if let rescuerName = report.rescuerName, !rescuerName.isEmpty {
+                        HStack(spacing: 10) {
+                            ZStack {
+                                Circle()
+                                    .fill(AppColors.primaryBlue.opacity(0.12))
+                                    .frame(width: 36, height: 36)
+                                Image(systemName: "figure.walk")
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundColor(AppColors.primaryBlue)
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 2) {
+                                if isCurrentUserRescuer {
+                                    Text("You are rescuing this dog 🐾")
+                                        .font(AppFonts.bodySemibold())
+                                        .foregroundColor(AppColors.primaryBlue)
+                                } else {
+                                    Text("\(rescuerName) is on their way 🐾")
+                                        .font(AppFonts.bodySemibold())
+                                        .foregroundColor(AppColors.primaryBlue)
+                                }
+                                Text("This case has been accepted")
+                                    .font(AppFonts.caption())
+                                    .foregroundColor(AppColors.gray500)
+                            }
+                            
+                            Spacer()
+                            
+                            Image(systemName: "checkmark.seal.fill")
+                                .font(.system(size: 20))
+                                .foregroundColor(AppColors.safe)
+                        }
+                        .padding(12)
+                        .background(AppColors.primaryBlue.opacity(0.07))
+                        .clipShape(RoundedRectangle(cornerRadius: AppConstants.cornerRadiusXL))
+                        .padding(.horizontal, AppConstants.horizontalPadding)
+                    }
                     
                     // Location row
                     HStack {
@@ -153,22 +211,93 @@ struct DogDetailSheet: View {
                     Spacer()
                         .frame(height: 12)
                     
-                    // Help this dog button
-                    Button {
-                        appState.assignCaseToUser(reportId: report.id)
-                        isPresented = false
-                        onHelpTapped(report)
-                    } label: {
-                        Text("Help this dog")
-                            .font(AppFonts.button())
-                            .foregroundColor(AppColors.white)
-                            .frame(maxWidth: .infinity)
-                            .frame(height: AppConstants.buttonHeight)
-                            .background(AppColors.primaryBlue)
-                            .clipShape(Capsule())
-                            .shadow(color: AppColors.primaryBlue.opacity(0.3), radius: 8, x: 0, y: 4)
+                    // MARK: - Bottom Button
+                    // Shows different states based on who the user is
+                    Group {
+                        if isCurrentUserRescuer {
+                            // Already the rescuer — go to Your Case
+                            Button {
+                                isPresented = false
+                                onHelpTapped(report)
+                            } label: {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "figure.walk")
+                                        .font(.system(size: 16, weight: .semibold))
+                                    Text("View Your Case")
+                                        .font(AppFonts.button())
+                                }
+                                .foregroundColor(AppColors.white)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: AppConstants.buttonHeight)
+                                .background(AppColors.primaryBlue)
+                                .clipShape(Capsule())
+                                .shadow(color: AppColors.primaryBlue.opacity(0.3), radius: 8, x: 0, y: 4)
+                            }
+                            .buttonStyle(.plain)
+                            
+                        } else if isCurrentUserReporter {
+                            // You reported this — view your report in activity
+                            Button {
+                                isPresented = false
+                                onHelpTapped(report)
+                            } label: {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "eye.fill")
+                                        .font(.system(size: 16, weight: .semibold))
+                                    Text("View Your Report")
+                                        .font(AppFonts.button())
+                                }
+                                .foregroundColor(AppColors.primaryBlue)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: AppConstants.buttonHeight)
+                                .background(AppColors.primaryBlue.opacity(0.1))
+                                .clipShape(Capsule())
+                            }
+                            .buttonStyle(.plain)
+                            
+                        } else if isTakenByOther {
+                            // Someone else accepted — show who + disabled button
+                            VStack(spacing: 8) {
+                                Text("Already being rescued by \(report.rescuerName ?? "someone")")
+                                    .font(AppFonts.captionMedium())
+                                    .foregroundColor(AppColors.gray500)
+                                    .multilineTextAlignment(.center)
+                                
+                                Button {
+                                    appState.assignCaseToUser(reportId: report.id)
+                                    isPresented = false
+                                    onHelpTapped(report)
+                                } label: {
+                                    Text("Help anyway")
+                                        .font(AppFonts.button())
+                                        .foregroundColor(AppColors.gray600)
+                                        .frame(maxWidth: .infinity)
+                                        .frame(height: AppConstants.buttonHeight)
+                                        .background(AppColors.gray200)
+                                        .clipShape(Capsule())
+                                }
+                                .buttonStyle(.plain)
+                            }
+                            
+                        } else {
+                            // Normal — first to accept
+                            Button {
+                                appState.assignCaseToUser(reportId: report.id)
+                                isPresented = false
+                                onHelpTapped(report)
+                            } label: {
+                                Text("Help this dog")
+                                    .font(AppFonts.button())
+                                    .foregroundColor(AppColors.white)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: AppConstants.buttonHeight)
+                                    .background(AppColors.primaryBlue)
+                                    .clipShape(Capsule())
+                                    .shadow(color: AppColors.primaryBlue.opacity(0.3), radius: 8, x: 0, y: 4)
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
-                    .buttonStyle(.plain)
                     .padding(.horizontal, AppConstants.horizontalPadding)
                     .padding(.bottom, AppConstants.spacingXL)
                 }

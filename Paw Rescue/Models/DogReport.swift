@@ -30,6 +30,8 @@ struct DogReport: Identifiable {
     let id: UUID
     var cloudKitRecordName: String?   // CloudKit CKRecord.ID.recordName for updates
     var reporterUserID: String?       // Apple ID user identifier of who reported it
+    var rescuerUserID: String?        // Apple ID of whoever accepted the case
+    var rescuerName: String?          // Display name of the rescuer (shown to reporter)
     var title: String
     var imageName: String?
     var customImage: UIImage?
@@ -51,6 +53,8 @@ struct DogReport: Identifiable {
         id: UUID = UUID(),
         cloudKitRecordName: String? = nil,
         reporterUserID: String? = nil,
+        rescuerUserID: String? = nil,
+        rescuerName: String? = nil,
         title: String = "DOG #1",
         imageName: String? = nil,
         customImage: UIImage? = nil,
@@ -71,6 +75,8 @@ struct DogReport: Identifiable {
         self.id = id
         self.cloudKitRecordName = cloudKitRecordName
         self.reporterUserID = reporterUserID
+        self.rescuerUserID = rescuerUserID
+        self.rescuerName = rescuerName
         self.title = title
         self.imageName = imageName
         self.customImage = customImage ?? photos.first
@@ -111,6 +117,8 @@ struct DogReport: Identifiable {
         self.id                  = UUID()
         self.cloudKitRecordName  = record.recordID.recordName
         self.reporterUserID      = record[CKReportField.reporterUserID] as? String
+        self.rescuerUserID       = record[CKReportField.rescuerUserID]  as? String
+        self.rescuerName         = record[CKReportField.rescuerName]    as? String
         self.title               = title
         self.reporterName        = reporterName
         self.reporterAvatarName  = "person.circle.fill"

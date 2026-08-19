@@ -14,6 +14,8 @@ enum CKReportField {
     static let title          = "title"
     static let reporterName   = "reporterName"
     static let reporterUserID = "reporterUserID"
+    static let rescuerUserID  = "rescuerUserID"  // set when someone accepts the case
+    static let rescuerName    = "rescuerName"    // display name of rescuer
     static let timeReported   = "timeReported"
     static let dateFormatted  = "dateFormatted"
     static let location       = "location"
@@ -139,6 +141,16 @@ final class CloudKitManager: ObservableObject {
         let recordID = CKRecord.ID(recordName: recordName)
         let record   = try await publicDB.record(for: recordID)
         record[CKReportField.isCompleted] = NSNumber(value: 1)
+        try await publicDB.save(record)
+    }
+    
+    /// Writes the rescuer's name and userID to an existing report record.
+    /// Called when a user taps "Help this dog" — visible to the reporter and all viewers.
+    func acceptCase(recordName: String, rescuerUserID: String, rescuerName: String) async throws {
+        let recordID = CKRecord.ID(recordName: recordName)
+        let record   = try await publicDB.record(for: recordID)
+        record[CKReportField.rescuerUserID] = rescuerUserID as CKRecordValue
+        record[CKReportField.rescuerName]   = rescuerName   as CKRecordValue
         try await publicDB.save(record)
     }
     

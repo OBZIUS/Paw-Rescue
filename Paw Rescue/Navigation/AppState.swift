@@ -49,11 +49,17 @@ final class AppState: ObservableObject {
     // MARK: - User GPS Coordinate
     @Published var userCurrentCoordinate: CLLocationCoordinate2D = MockData.kutaCenter
     
-    // MARK: - User Activity (Your Activity carousel — assigned & not completed)
+    // MARK: - User Activity (Your Activity carousel)
+    // Shows: dogs YOU reported (so you track your own reports) + dogs you accepted to rescue
     var userActivityReports: [DogReport] {
-        dogReports.filter { report in
-            guard let name = report.cloudKitRecordName else { return false }
-            return assignedCaseIDs.contains(name) && !report.isCompleted
+        let currentUserID = AuthManager.shared.currentUserID
+        return dogReports.filter { report in
+            guard !report.isCompleted else { return false }
+            // Case 1: You reported this dog
+            let isReporter = !currentUserID.isEmpty && report.reporterUserID == currentUserID
+            // Case 2: You accepted to rescue this dog
+            let isRescuer  = report.cloudKitRecordName.map { assignedCaseIDs.contains($0) } ?? false
+            return isReporter || isRescuer
         }
     }
     
@@ -93,21 +99,26 @@ final class AppState: ObservableObject {
     
     /// Fetches real dog reports from CloudKit public database.
     /// Call on app launch, map appear, and pull-to-refresh.
+    /// NOTE: CloudKit public DB is readable without auth — no guard needed.
     func loadReports() {
-        guard isSignedIn else { return }
         isLoadingReports = true
         Task {
             do {
                 var reports = try await CloudKitManager.shared.fetchReports()
                 // Re-apply local assigned state
-                let ids = self.assignedCaseIDs
+                let ids           = self.assignedCaseIDs
+                let currentUserID = AuthManager.shared.currentUserID
                 for i in reports.indices {
                     if let name = reports[i].cloudKitRecordName, ids.contains(name) {
                         reports[i].isAssignedToUser = true
                     }
+                    // Mark if current user is the rescuer
+                    if !currentUserID.isEmpty, reports[i].rescuerUserID == currentUserID {
+                        reports[i].isAssignedToUser = true
+                    }
                 }
                 await MainActor.run {
-                    self.dogReports = reports
+                    self.dogReports     = reports
                     self.isLoadingReports = false
                 }
             } catch {
@@ -118,19 +129,13 @@ final class AppState: ObservableObject {
     }
     
     /// Fetches real feed posts from CloudKit public database.
-    /// Call on home appear and pull-to-refresh.
     func loadFeedPosts() {
-        guard isSignedIn else { return }
         isLoadingFeed = true
         Task {
             do {
-                var posts = try await CloudKitManager.shared.fetchFeedPosts()
-                // Mark posts that current user has liked (stored in likedByUsers)
-                // Note: full per-user like state is in the CloudKit record's likedByUsers array
-                // For simplicity we default isLiked = false; a full implementation would
-                // fetch and check the likedByUsers array against the current userID.
+                let posts = try await CloudKitManager.shared.fetchFeedPosts()
                 await MainActor.run {
-                    self.feedPosts = posts
+                    self.feedPosts    = posts
                     self.isLoadingFeed = false
                 }
             } catch {
@@ -386,14 +391,30 @@ final class AppState: ObservableObject {
         }
     }
     
-    /// Assigns a case to the current user. Persists locally and to CloudKit private DB.
+    /// Assigns a case to the current user.
+    /// Persists locally + CloudKit private DB (stats) + writes rescuer name to public DB record.
     func assignCaseToUser(reportId: UUID) {
-        if let index = dogReports.firstIndex(where: { $0.id == reportId }) {
-            dogReports[index].isAssignedToUser = true
-            if let name = dogReports[index].cloudKitRecordName, !assignedCaseIDs.contains(name) {
-                assignedCaseIDs.append(name)
-                let userID = AuthManager.shared.currentUserID
-                if !userID.isEmpty { pushUserStats(userID: userID) }
+        guard let index = dogReports.firstIndex(where: { $0.id == reportId }) else { return }
+        let userID      = AuthManager.shared.currentUserID
+        let displayName = AuthManager.shared.currentUserName
+        
+        dogReports[index].isAssignedToUser = true
+        dogReports[index].rescuerUserID    = userID
+        dogReports[index].rescuerName      = displayName
+        
+        if let recordName = dogReports[index].cloudKitRecordName, !assignedCaseIDs.contains(recordName) {
+            assignedCaseIDs.append(recordName)
+            if !userID.isEmpty { pushUserStats(userID: userID) }
+            
+            // Write rescuer info to the CloudKit public record so the reporter sees it
+            if !userID.isEmpty && !displayName.isEmpty {
+                Task {
+                    try? await CloudKitManager.shared.acceptCase(
+                        recordName: recordName,
+                        rescuerUserID: userID,
+                        rescuerName: displayName
+                    )
+                }
             }
         }
     }

@@ -12,6 +12,14 @@ struct YourCaseView: View {
     @State private var showShareFeed = false
     @State private var selectedPhotoIndex: Int = 0
     
+    private var currentUserID: String { AuthManager.shared.currentUserID }
+    private var isReporter: Bool {
+        !currentUserID.isEmpty && report.reporterUserID == currentUserID
+    }
+    private var isRescuer: Bool {
+        !currentUserID.isEmpty && report.rescuerUserID == currentUserID
+    }
+    
     var body: some View {
         NavigationStack {
             ZStack {
@@ -41,6 +49,70 @@ struct YourCaseView: View {
                                 Color.clear.frame(width: 36, height: 36)
                             }
                             .padding(.top, AppConstants.spacingM)
+                            
+                            // MARK: - Context Banner (Reporter or Rescuer)
+                            if isRescuer {
+                                // You accepted this rescue
+                                HStack(spacing: 10) {
+                                    Image(systemName: "figure.walk")
+                                        .font(.system(size: 18, weight: .semibold))
+                                        .foregroundColor(AppColors.primaryBlue)
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("You are rescuing this dog")
+                                            .font(AppFonts.bodySemibold())
+                                            .foregroundColor(AppColors.primaryBlue)
+                                        Text("Reported by \(report.reporterName)")
+                                            .font(AppFonts.caption())
+                                            .foregroundColor(AppColors.gray500)
+                                    }
+                                    Spacer()
+                                    Image(systemName: "pawprint.fill")
+                                        .font(.system(size: 18))
+                                        .foregroundColor(AppColors.primaryBlue.opacity(0.5))
+                                }
+                                .padding(14)
+                                .background(AppColors.primaryBlue.opacity(0.08))
+                                .clipShape(RoundedRectangle(cornerRadius: AppConstants.cornerRadiusXL))
+                            } else if isReporter {
+                                // You reported this dog — show who's helping
+                                if let rescuerName = report.rescuerName, !rescuerName.isEmpty {
+                                    HStack(spacing: 10) {
+                                        Image(systemName: "checkmark.seal.fill")
+                                            .font(.system(size: 20))
+                                            .foregroundColor(AppColors.safe)
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text("\(rescuerName) is rescuing your dog 🐾")
+                                                .font(AppFonts.bodySemibold())
+                                                .foregroundColor(AppColors.black)
+                                            Text("A rescuer is on their way")
+                                                .font(AppFonts.caption())
+                                                .foregroundColor(AppColors.gray500)
+                                        }
+                                        Spacer()
+                                    }
+                                    .padding(14)
+                                    .background(AppColors.safe.opacity(0.1))
+                                    .clipShape(RoundedRectangle(cornerRadius: AppConstants.cornerRadiusXL))
+                                } else {
+                                    HStack(spacing: 10) {
+                                        Image(systemName: "clock.fill")
+                                            .font(.system(size: 18))
+                                            .foregroundColor(AppColors.warning)
+                                        VStack(alignment: .leading, spacing: 2) {
+                                            Text("Waiting for a rescuer")
+                                                .font(AppFonts.bodySemibold())
+                                                .foregroundColor(AppColors.black)
+                                            Text("Your report is visible on the community map")
+                                                .font(AppFonts.caption())
+                                                .foregroundColor(AppColors.gray500)
+                                        }
+                                        Spacer()
+                                    }
+                                    .padding(14)
+                                    .background(AppColors.warning.opacity(0.1))
+                                    .clipShape(RoundedRectangle(cornerRadius: AppConstants.cornerRadiusXL))
+                                }
+                            }
                             
                             // Dog photo (carousel if multiple)
                             if !report.photos.isEmpty {
@@ -158,13 +230,13 @@ struct YourCaseView: View {
                         .padding(.horizontal, AppConstants.horizontalPadding)
                     }
                     
-                    // Pinned Bottom Action Buttons: "Can't help" and "Mark as done"
-                    HStack(spacing: AppConstants.spacingM) {
-                        // Can't Help Button
+                    // Pinned Bottom Action Buttons — adapt based on role
+                    if isReporter && !isRescuer {
+                        // Reporter sees just a dismiss (they don't rescue their own dog)
                         Button {
-                            showCantHelpSheet = true
+                            dismiss()
                         } label: {
-                            Text("Can’t help")
+                            Text("Got it")
                                 .font(AppFonts.button())
                                 .foregroundColor(AppColors.black)
                                 .frame(maxWidth: .infinity)
@@ -173,23 +245,39 @@ struct YourCaseView: View {
                                 .clipShape(Capsule())
                         }
                         .buttonStyle(.plain)
-                        
-                        // Mark as Done Button
-                        Button {
-                            showThankYouDialog = true
-                        } label: {
-                            Text("Mark as done")
-                                .font(AppFonts.button())
-                                .foregroundColor(.white)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: AppConstants.buttonHeight)
-                                .background(AppColors.primaryBlue)
-                                .clipShape(Capsule())
-                                .shadow(color: AppColors.primaryBlue.opacity(0.3), radius: 8, x: 0, y: 4)
+                        .padding(.horizontal, AppConstants.horizontalPadding)
+                    } else {
+                        // Rescuer sees Can't Help + Mark as Done
+                        HStack(spacing: AppConstants.spacingM) {
+                            Button {
+                                showCantHelpSheet = true
+                            } label: {
+                                Text("Can't help")
+                                    .font(AppFonts.button())
+                                    .foregroundColor(AppColors.black)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: AppConstants.buttonHeight)
+                                    .background(AppColors.secondaryCream)
+                                    .clipShape(Capsule())
+                            }
+                            .buttonStyle(.plain)
+                            
+                            Button {
+                                showThankYouDialog = true
+                            } label: {
+                                Text("Mark as done")
+                                    .font(AppFonts.button())
+                                    .foregroundColor(.white)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: AppConstants.buttonHeight)
+                                    .background(AppColors.primaryBlue)
+                                    .clipShape(Capsule())
+                                    .shadow(color: AppColors.primaryBlue.opacity(0.3), radius: 8, x: 0, y: 4)
+                            }
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
+                        .padding(.horizontal, AppConstants.horizontalPadding)
                     }
-                    .padding(.horizontal, AppConstants.horizontalPadding)
                     .padding(.top, 12)
                     .padding(.bottom, AppConstants.spacingHuge)
                     .background(AppColors.primaryBackground)
