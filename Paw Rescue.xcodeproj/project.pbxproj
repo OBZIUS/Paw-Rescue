@@ -1,0 +1,613 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A10001 /* PawRescueApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10001 /* PawRescueApp.swift */; };
+		A10002 /* AppColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10002 /* AppColors.swift */; };
+		A10003 /* AppFonts.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10003 /* AppFonts.swift */; };
+		A10004 /* AppConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10004 /* AppConstants.swift */; };
+		A10005 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10005 /* AppState.swift */; };
+		A10006 /* DogReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10006 /* DogReport.swift */; };
+		A10007 /* MockData.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10007 /* MockData.swift */; };
+		A10008 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10008 /* OnboardingView.swift */; };
+		A10009 /* OnboardingVideoPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10009 /* OnboardingVideoPlayer.swift */; };
+		A10010 /* SignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10010 /* SignInView.swift */; };
+		A10011 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10011 /* MainTabView.swift */; };
+		A10012 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10012 /* HomeView.swift */; };
+		A10013 /* MapScreenView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10013 /* MapScreenView.swift */; };
+		A10014 /* DogAnnotationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10014 /* DogAnnotationView.swift */; };
+		A10015 /* DogDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10015 /* DogDetailSheet.swift */; };
+		A10016 /* FirstTimeHintView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10016 /* FirstTimeHintView.swift */; };
+		A10017 /* InstructionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10017 /* InstructionsView.swift */; };
+		A10018 /* CameraManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10018 /* CameraManager.swift */; };
+		A10019 /* CameraView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10019 /* CameraView.swift */; };
+		A10020 /* ReviewPhotosView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10020 /* ReviewPhotosView.swift */; };
+		A10021 /* ReportFormView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10021 /* ReportFormView.swift */; };
+		A10022 /* FormQuestionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10022 /* FormQuestionView.swift */; };
+		A10023 /* LoadingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10023 /* LoadingView.swift */; };
+		A10024 /* ConfirmationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10024 /* ConfirmationView.swift */; };
+		A10025 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B10025 /* Assets.xcassets */; };
+		A10026 /* onboarding_video.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = B10026 /* onboarding_video.mp4 */; };
+		A10027 /* LiquidGlass.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10027 /* LiquidGlass.swift */; };
+		A10028 /* VisionDogDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10028 /* VisionDogDetector.swift */; };
+		A10029 /* UrgencyClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10029 /* UrgencyClassifier.swift */; };
+		A10030 /* ReportCreatedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10030 /* ReportCreatedView.swift */; };
+		A10031 /* EditCaseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10031 /* EditCaseView.swift */; };
+		A10032 /* YourCaseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10032 /* YourCaseView.swift */; };
+		A10033 /* CantHelpSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10033 /* CantHelpSheet.swift */; };
+		A10034 /* ShareFeedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10034 /* ShareFeedView.swift */; };
+		A10035 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10035 /* ProfileView.swift */; };
+		A10036 /* RescuedDogsGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10036 /* RescuedDogsGridView.swift */; };
+		A10037 /* PlacePinMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10037 /* PlacePinMapView.swift */; };
+		CC1AD32B30366A0D00B0E198 /* ImageCacheManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC1AD32A30366A0D00B0E198 /* ImageCacheManager.swift */; };
+		CC1AD32C30366A0D00B0E198 /* AuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC1AD32830366A0D00B0E198 /* AuthManager.swift */; };
+		CC1AD32D30366A0D00B0E198 /* CloudKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC1AD32930366A0D00B0E198 /* CloudKitManager.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		B10001 /* PawRescueApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PawRescueApp.swift; sourceTree = "<group>"; };
+		B10002 /* AppColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppColors.swift; sourceTree = "<group>"; };
+		B10003 /* AppFonts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppFonts.swift; sourceTree = "<group>"; };
+		B10004 /* AppConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConstants.swift; sourceTree = "<group>"; };
+		B10005 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		B10006 /* DogReport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DogReport.swift; sourceTree = "<group>"; };
+		B10007 /* MockData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockData.swift; sourceTree = "<group>"; };
+		B10008 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		B10009 /* OnboardingVideoPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingVideoPlayer.swift; sourceTree = "<group>"; };
+		B10010 /* SignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInView.swift; sourceTree = "<group>"; };
+		B10011 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
+		B10012 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		B10013 /* MapScreenView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MapScreenView.swift; sourceTree = "<group>"; };
+		B10014 /* DogAnnotationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DogAnnotationView.swift; sourceTree = "<group>"; };
+		B10015 /* DogDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DogDetailSheet.swift; sourceTree = "<group>"; };
+		B10016 /* FirstTimeHintView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstTimeHintView.swift; sourceTree = "<group>"; };
+		B10017 /* InstructionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstructionsView.swift; sourceTree = "<group>"; };
+		B10018 /* CameraManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraManager.swift; sourceTree = "<group>"; };
+		B10019 /* CameraView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CameraView.swift; sourceTree = "<group>"; };
+		B10020 /* ReviewPhotosView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewPhotosView.swift; sourceTree = "<group>"; };
+		B10021 /* ReportFormView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportFormView.swift; sourceTree = "<group>"; };
+		B10022 /* FormQuestionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormQuestionView.swift; sourceTree = "<group>"; };
+		B10023 /* LoadingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadingView.swift; sourceTree = "<group>"; };
+		B10024 /* ConfirmationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfirmationView.swift; sourceTree = "<group>"; };
+		B10025 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		B10026 /* onboarding_video.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = onboarding_video.mp4; sourceTree = "<group>"; };
+		B10027 /* LiquidGlass.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiquidGlass.swift; sourceTree = "<group>"; };
+		B10028 /* VisionDogDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisionDogDetector.swift; sourceTree = "<group>"; };
+		B10029 /* UrgencyClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UrgencyClassifier.swift; sourceTree = "<group>"; };
+		B10030 /* ReportCreatedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReportCreatedView.swift; sourceTree = "<group>"; };
+		B10031 /* EditCaseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditCaseView.swift; sourceTree = "<group>"; };
+		B10032 /* YourCaseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YourCaseView.swift; sourceTree = "<group>"; };
+		B10033 /* CantHelpSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CantHelpSheet.swift; sourceTree = "<group>"; };
+		B10034 /* ShareFeedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareFeedView.swift; sourceTree = "<group>"; };
+		B10035 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
+		B10036 /* RescuedDogsGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RescuedDogsGridView.swift; sourceTree = "<group>"; };
+		B10037 /* PlacePinMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlacePinMapView.swift; sourceTree = "<group>"; };
+		C10001 /* Paw Rescue.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Paw Rescue.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		CC1AD3273036688800B0E198 /* Paw Rescue.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Paw Rescue.entitlements"; sourceTree = "<group>"; };
+		CC1AD32830366A0D00B0E198 /* AuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthManager.swift; sourceTree = "<group>"; };
+		CC1AD32930366A0D00B0E198 /* CloudKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudKitManager.swift; sourceTree = "<group>"; };
+		CC1AD32A30366A0D00B0E198 /* ImageCacheManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageCacheManager.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		D10001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		E10001 = {
+			isa = PBXGroup;
+			children = (
+				E10002 /* Paw Rescue */,
+				E10003 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		E10002 /* Paw Rescue */ = {
+			isa = PBXGroup;
+			children = (
+				CC1AD3273036688800B0E198 /* Paw Rescue.entitlements */,
+				B10001 /* PawRescueApp.swift */,
+				E10004 /* Theme */,
+				E10005 /* Navigation */,
+				E10006 /* Models */,
+				E10007 /* Screens */,
+				E10015 /* Resources */,
+				B10025 /* Assets.xcassets */,
+				CC1AD32830366A0D00B0E198 /* AuthManager.swift */,
+				CC1AD32930366A0D00B0E198 /* CloudKitManager.swift */,
+				CC1AD32A30366A0D00B0E198 /* ImageCacheManager.swift */,
+			);
+			path = "Paw Rescue";
+			sourceTree = "<group>";
+		};
+		E10003 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				C10001 /* Paw Rescue.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		E10004 /* Theme */ = {
+			isa = PBXGroup;
+			children = (
+				B10002 /* AppColors.swift */,
+				B10003 /* AppFonts.swift */,
+				B10004 /* AppConstants.swift */,
+				B10027 /* LiquidGlass.swift */,
+			);
+			path = Theme;
+			sourceTree = "<group>";
+		};
+		E10005 /* Navigation */ = {
+			isa = PBXGroup;
+			children = (
+				B10005 /* AppState.swift */,
+			);
+			path = Navigation;
+			sourceTree = "<group>";
+		};
+		E10006 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				B10006 /* DogReport.swift */,
+				B10007 /* MockData.swift */,
+				B10028 /* VisionDogDetector.swift */,
+				B10029 /* UrgencyClassifier.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		E10007 /* Screens */ = {
+			isa = PBXGroup;
+			children = (
+				E10008 /* Onboarding */,
+				E10009 /* SignIn */,
+				E10010 /* Main */,
+				E10011 /* Home */,
+				E10012 /* Map */,
+				E10013 /* Camera */,
+				E10014 /* Report */,
+				E10016 /* Case */,
+				E10017 /* Profile */,
+			);
+			path = Screens;
+			sourceTree = "<group>";
+		};
+		E10008 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				B10008 /* OnboardingView.swift */,
+				B10009 /* OnboardingVideoPlayer.swift */,
+			);
+			path = Onboarding;
+			sourceTree = "<group>";
+		};
+		E10009 /* SignIn */ = {
+			isa = PBXGroup;
+			children = (
+				B10010 /* SignInView.swift */,
+			);
+			path = SignIn;
+			sourceTree = "<group>";
+		};
+		E10010 /* Main */ = {
+			isa = PBXGroup;
+			children = (
+				B10011 /* MainTabView.swift */,
+			);
+			path = Main;
+			sourceTree = "<group>";
+		};
+		E10011 /* Home */ = {
+			isa = PBXGroup;
+			children = (
+				B10012 /* HomeView.swift */,
+			);
+			path = Home;
+			sourceTree = "<group>";
+		};
+		E10012 /* Map */ = {
+			isa = PBXGroup;
+			children = (
+				B10013 /* MapScreenView.swift */,
+				B10014 /* DogAnnotationView.swift */,
+				B10015 /* DogDetailSheet.swift */,
+				B10016 /* FirstTimeHintView.swift */,
+				B10037 /* PlacePinMapView.swift */,
+			);
+			path = Map;
+			sourceTree = "<group>";
+		};
+		E10013 /* Camera */ = {
+			isa = PBXGroup;
+			children = (
+				B10018 /* CameraManager.swift */,
+				B10019 /* CameraView.swift */,
+				B10020 /* ReviewPhotosView.swift */,
+			);
+			path = Camera;
+			sourceTree = "<group>";
+		};
+		E10014 /* Report */ = {
+			isa = PBXGroup;
+			children = (
+				B10017 /* InstructionsView.swift */,
+				B10021 /* ReportFormView.swift */,
+				B10022 /* FormQuestionView.swift */,
+				B10023 /* LoadingView.swift */,
+				B10024 /* ConfirmationView.swift */,
+				B10030 /* ReportCreatedView.swift */,
+				B10031 /* EditCaseView.swift */,
+			);
+			path = Report;
+			sourceTree = "<group>";
+		};
+		E10015 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				B10026 /* onboarding_video.mp4 */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		E10016 /* Case */ = {
+			isa = PBXGroup;
+			children = (
+				B10032 /* YourCaseView.swift */,
+				B10033 /* CantHelpSheet.swift */,
+				B10034 /* ShareFeedView.swift */,
+			);
+			path = Case;
+			sourceTree = "<group>";
+		};
+		E10017 /* Profile */ = {
+			isa = PBXGroup;
+			children = (
+				B10035 /* ProfileView.swift */,
+				B10036 /* RescuedDogsGridView.swift */,
+			);
+			path = Profile;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		F10001 /* Paw Rescue */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = G10003 /* Build configuration list for PBXNativeTarget "Paw Rescue" */;
+			buildPhases = (
+				F10002 /* Sources */,
+				D10001 /* Frameworks */,
+				F10003 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "Paw Rescue";
+			productName = "Paw Rescue";
+			productReference = C10001 /* Paw Rescue.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		F10004 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1540;
+				LastUpgradeCheck = 2660;
+				TargetAttributes = {
+					F10001 = {
+						CreatedOnToolsVersion = 15.4;
+					};
+				};
+			};
+			buildConfigurationList = G10001 /* Build configuration list for PBXProject "Paw Rescue" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = E10001;
+			productRefGroup = E10003 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				F10001 /* Paw Rescue */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		F10003 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10025 /* Assets.xcassets in Resources */,
+				A10026 /* onboarding_video.mp4 in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		F10002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10001 /* PawRescueApp.swift in Sources */,
+				A10002 /* AppColors.swift in Sources */,
+				A10003 /* AppFonts.swift in Sources */,
+				A10004 /* AppConstants.swift in Sources */,
+				A10005 /* AppState.swift in Sources */,
+				A10006 /* DogReport.swift in Sources */,
+				A10007 /* MockData.swift in Sources */,
+				CC1AD32B30366A0D00B0E198 /* ImageCacheManager.swift in Sources */,
+				CC1AD32C30366A0D00B0E198 /* AuthManager.swift in Sources */,
+				CC1AD32D30366A0D00B0E198 /* CloudKitManager.swift in Sources */,
+				A10008 /* OnboardingView.swift in Sources */,
+				A10009 /* OnboardingVideoPlayer.swift in Sources */,
+				A10010 /* SignInView.swift in Sources */,
+				A10011 /* MainTabView.swift in Sources */,
+				A10012 /* HomeView.swift in Sources */,
+				A10013 /* MapScreenView.swift in Sources */,
+				A10014 /* DogAnnotationView.swift in Sources */,
+				A10015 /* DogDetailSheet.swift in Sources */,
+				A10016 /* FirstTimeHintView.swift in Sources */,
+				A10017 /* InstructionsView.swift in Sources */,
+				A10018 /* CameraManager.swift in Sources */,
+				A10019 /* CameraView.swift in Sources */,
+				A10020 /* ReviewPhotosView.swift in Sources */,
+				A10021 /* ReportFormView.swift in Sources */,
+				A10022 /* FormQuestionView.swift in Sources */,
+				A10023 /* LoadingView.swift in Sources */,
+				A10024 /* ConfirmationView.swift in Sources */,
+				A10027 /* LiquidGlass.swift in Sources */,
+				A10028 /* VisionDogDetector.swift in Sources */,
+				A10029 /* UrgencyClassifier.swift in Sources */,
+				A10030 /* ReportCreatedView.swift in Sources */,
+				A10031 /* EditCaseView.swift in Sources */,
+				A10032 /* YourCaseView.swift in Sources */,
+				A10033 /* CantHelpSheet.swift in Sources */,
+				A10034 /* ShareFeedView.swift in Sources */,
+				A10035 /* ProfileView.swift in Sources */,
+				A10036 /* RescuedDogsGridView.swift in Sources */,
+				A10037 /* PlacePinMapView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		G10002 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		G10004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		G10005 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "Paw Rescue/Paw Rescue.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9U7DB598M5;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Paw Rescue/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Paw Rescue";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Paw Rescue needs camera access to take photos of dogs that need help.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Paw Rescue needs your location to show nearby dog reports and help rescuers find dogs.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Paw Rescue needs photo library access to add photos to your report.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.pawrescue.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		G10006 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "Paw Rescue/Paw Rescue.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 9U7DB598M5;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Paw Rescue/Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Paw Rescue";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Paw Rescue needs camera access to take photos of dogs that need help.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Paw Rescue needs your location to show nearby dog reports and help rescuers find dogs.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Paw Rescue needs photo library access to add photos to your report.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.pawrescue.app;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		G10001 /* Build configuration list for PBXProject "Paw Rescue" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				G10002 /* Debug */,
+				G10004 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		G10003 /* Build configuration list for PBXNativeTarget "Paw Rescue" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				G10005 /* Debug */,
+				G10006 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = F10004 /* Project object */;
+}

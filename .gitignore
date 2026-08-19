@@ -1,0 +1,30 @@
+# Xcode
+*.xcuserstate
+xcuserdata/
+*.xcuserdatad/
+DerivedData/
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Build
+build/
+*.o
+*.d
+
+# CocoaPods
+Pods/
+Podfile.lock
+
+# macOS
+.DS_Store
+*.DS_Store
+.AppleDouble
+.LSOverride
+
+# Archives
+*.xcarchive
+
+# Previews
+*.preview/
