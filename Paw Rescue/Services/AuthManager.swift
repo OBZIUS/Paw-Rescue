@@ -113,7 +113,11 @@ extension AuthManager: ASAuthorizationControllerDelegate {
     func authorizationController(controller: ASAuthorizationController,
                                  didCompleteWithError error: Error) {
         // User cancelled or error — stay on sign-in screen
-        print("[AuthManager] Sign in error: \(error.localizedDescription)")
+        if let authError = error as? ASAuthorizationError, authError.code == .canceled {
+            print("[AuthManager] User cancelled Apple Sign In")
+        } else {
+            print("[AuthManager] Sign in error: \(error.localizedDescription)")
+        }
     }
 }
 
