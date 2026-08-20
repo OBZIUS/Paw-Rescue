@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// "What happened?" modal sheet when user cannot complete a rescue case.
+/// "What happened?" modal sheet styled cleanly in light mode matching the app's design system.
 struct CantHelpSheet: View {
     let reportId: UUID
     @EnvironmentObject private var appState: AppState
@@ -18,57 +18,90 @@ struct CantHelpSheet: View {
     ]
     
     var body: some View {
-        VStack(spacing: AppConstants.spacingL) {
-            // Modal Header
+        VStack(spacing: 0) {
+            // Header
             VStack(spacing: 6) {
                 Text("What happened?")
-                    .font(.system(size: 24, weight: .bold))
+                    .font(.system(size: 22, weight: .bold))
                     .foregroundColor(AppColors.black)
                 
                 Text("This case will go back on the map so someone else can pick it up.")
-                    .font(AppFonts.footnote())
-                    .foregroundColor(AppColors.gray500)
+                    .font(AppFonts.caption())
+                    .foregroundColor(AppColors.gray600)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 16)
             }
-            .padding(.top, AppConstants.spacingL)
+            .padding(.top, 22)
+            .padding(.bottom, 18)
             
-            // Reason options
-            VStack(spacing: 10) {
+            // Options List
+            VStack(spacing: 8) {
                 ForEach(reasons, id: \.self) { reason in
                     Button {
                         selectedReason = reason
                     } label: {
                         HStack {
-                            Spacer()
                             Text(reason)
                                 .font(AppFonts.bodyMedium())
-                                .foregroundColor(selectedReason == reason ? AppColors.primaryBlue : AppColors.black)
+                                .foregroundColor(AppColors.black)
+                            
                             Spacer()
+                            
+                            if selectedReason == reason {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.system(size: 18, weight: .bold))
+                                    .foregroundColor(AppColors.primaryBlue)
+                            } else {
+                                Circle()
+                                    .stroke(AppColors.gray300, lineWidth: 1.5)
+                                    .frame(width: 18, height: 18)
+                            }
                         }
+                        .padding(.horizontal, 16)
                         .frame(height: 48)
                         .background(
+                            selectedReason == reason
+                            ? AppColors.primaryBlue.opacity(0.08)
+                            : Color.white
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: AppConstants.cornerRadiusLarge))
+                        .overlay(
                             RoundedRectangle(cornerRadius: AppConstants.cornerRadiusLarge)
-                                .fill(selectedReason == reason ? AppColors.primaryBlue.opacity(0.08) : Color.white)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: AppConstants.cornerRadiusLarge)
-                                        .stroke(selectedReason == reason ? AppColors.primaryBlue : AppColors.gray200, lineWidth: 1)
+                                .stroke(
+                                    selectedReason == reason ? AppColors.primaryBlue : AppColors.gray200,
+                                    lineWidth: selectedReason == reason ? 1.5 : 1
                                 )
                         )
                     }
                     .buttonStyle(.plain)
                 }
             }
+            .padding(.horizontal, AppConstants.horizontalPadding)
             
-            // Optional Caption textfield
-            TextField("Add a caption.....", text: $customCaption)
-                .font(AppFonts.body())
-                .padding(.horizontal, 16)
-                .frame(height: 48)
-                .background(
-                    RoundedRectangle(cornerRadius: AppConstants.cornerRadiusLarge)
-                        .stroke(AppColors.gray200, lineWidth: 1)
-                )
+            // Additional info textfield with clearly visible dark placeholder
+            ZStack(alignment: .leading) {
+                if customCaption.isEmpty {
+                    Text("Additional info (optional)")
+                        .font(AppFonts.bodyMedium())
+                        .foregroundColor(AppColors.gray600)
+                        .padding(.horizontal, 16)
+                }
+                TextField("", text: $customCaption)
+                    .font(AppFonts.body())
+                    .foregroundColor(AppColors.black)
+                    .padding(.horizontal, 16)
+            }
+            .frame(height: 48)
+            .background(Color.white)
+            .clipShape(RoundedRectangle(cornerRadius: AppConstants.cornerRadiusLarge))
+            .overlay(
+                RoundedRectangle(cornerRadius: AppConstants.cornerRadiusLarge)
+                    .stroke(AppColors.gray300, lineWidth: 1)
+            )
+            .padding(.horizontal, AppConstants.horizontalPadding)
+            .padding(.top, 10)
+            
+            Spacer(minLength: 16)
             
             // Submit Button
             Button {
@@ -83,14 +116,15 @@ struct CantHelpSheet: View {
                     .frame(height: AppConstants.buttonHeight)
                     .background(AppColors.primaryBlue)
                     .clipShape(Capsule())
+                    .shadow(color: AppColors.primaryBlue.opacity(0.3), radius: 8, x: 0, y: 3)
             }
             .buttonStyle(.plain)
-            .padding(.top, 6)
+            .padding(.horizontal, AppConstants.horizontalPadding)
+            .padding(.bottom, 24)
         }
-        .padding(.horizontal, AppConstants.horizontalPadding)
-        .padding(.bottom, AppConstants.spacingXL)
-        .background(Color.white)
-        .presentationDetents([.fraction(0.65)])
+        .background(AppColors.primaryBackground)
+        .preferredColorScheme(.light)
+        .presentationDetents([.height(460)])
         .presentationDragIndicator(.visible)
         .presentationCornerRadius(AppConstants.cornerRadiusXXL)
     }

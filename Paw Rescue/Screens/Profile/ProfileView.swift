@@ -1,12 +1,13 @@
 import SwiftUI
 
-/// Profile screen featuring user rescue stats and polaroid tilted photo stack matching reference design.
+/// Profile screen featuring user rescue stats, profile editing, and polaroid tilted photo stack.
 struct ProfileView: View {
     @EnvironmentObject private var appState: AppState
     @EnvironmentObject private var authManager: AuthManager
     @Environment(\.dismiss) private var dismiss
     @State private var showAllDogsGrid = false
     @State private var showSignOutConfirm = false
+    @State private var showEditProfile = false
     
     var body: some View {
         NavigationStack {
@@ -48,44 +49,59 @@ struct ProfileView: View {
                         
                         // User Profile Card + Stats Banner (Navy Blue)
                         VStack(spacing: 0) {
-                            // Top User Info Row
-                            HStack(spacing: 14) {
-                                // Avatar with user's initials
-                                ZStack {
-                                    Circle()
-                                        .fill(AppColors.primaryBlue)
-                                        .frame(width: 54, height: 54)
-                                    
-                                    if let initial = appState.userName.first {
-                                        Text(String(initial).uppercased())
-                                            .font(.system(size: 22, weight: .bold))
-                                            .foregroundColor(.white)
-                                    } else {
-                                        Image(systemName: "person.crop.circle.fill")
-                                            .font(.system(size: 54))
-                                            .foregroundColor(.white)
+                            // Top User Info Row (Tappable to Edit)
+                            Button {
+                                showEditProfile = true
+                            } label: {
+                                HStack(spacing: 14) {
+                                    // Avatar with user's initials
+                                    ZStack {
+                                        Circle()
+                                            .fill(AppColors.primaryBlue)
+                                            .frame(width: 56, height: 56)
+                                        
+                                        if let initial = appState.userName.first {
+                                            Text(String(initial).uppercased())
+                                                .font(.system(size: 24, weight: .bold))
+                                                .foregroundColor(.white)
+                                        } else {
+                                            Image(systemName: "person.crop.circle.fill")
+                                                .font(.system(size: 56))
+                                                .foregroundColor(.white)
+                                        }
                                     }
-                                }
-                                
-                                VStack(alignment: .leading, spacing: 3) {
-                                    Text(appState.userName.isEmpty ? "Rescuer" : appState.userName)
-                                        .font(.system(size: 20, weight: .bold))
-                                        .foregroundColor(AppColors.black)
                                     
-                                    Text(appState.userRole)
-                                        .font(AppFonts.caption())
-                                        .foregroundColor(AppColors.gray500)
-                                    
-                                    if !authManager.currentUserEmail.isEmpty {
-                                        Text(authManager.currentUserEmail)
-                                            .font(.system(size: 11, weight: .regular))
-                                            .foregroundColor(AppColors.gray400)
+                                    VStack(alignment: .leading, spacing: 3) {
+                                        HStack(spacing: 6) {
+                                            Text(appState.userName.isEmpty ? "Rescuer" : appState.userName)
+                                                .font(.system(size: 20, weight: .bold))
+                                                .foregroundColor(AppColors.black)
+                                            
+                                            Image(systemName: "pencil.circle.fill")
+                                                .font(.system(size: 16))
+                                                .foregroundColor(AppColors.primaryBlue.opacity(0.8))
+                                        }
+                                        
+                                        Text(appState.userRole)
+                                            .font(AppFonts.caption())
+                                            .foregroundColor(AppColors.gray500)
+                                        
+                                        if !authManager.currentUserEmail.isEmpty {
+                                            Text(authManager.currentUserEmail)
+                                                .font(.system(size: 11, weight: .regular))
+                                                .foregroundColor(AppColors.gray400)
+                                        }
                                     }
+                                    
+                                    Spacer()
+                                    
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 13, weight: .semibold))
+                                        .foregroundColor(AppColors.gray400)
                                 }
-                                
-                                Spacer()
+                                .padding(18)
                             }
-                            .padding(18)
+                            .buttonStyle(.plain)
                             
                             // Navy Blue Stats Row
                             HStack(spacing: 0) {
@@ -186,6 +202,14 @@ struct ProfileView: View {
                 RescuedDogsGridView()
                     .environmentObject(appState)
             }
+            .sheet(isPresented: $showEditProfile) {
+                EditProfileSheet(isPresented: $showEditProfile)
+                    .environmentObject(appState)
+                    .environmentObject(authManager)
+                    .presentationDetents([.medium])
+                    .presentationDragIndicator(.visible)
+                    .presentationCornerRadius(AppConstants.cornerRadiusXXL)
+            }
             .confirmationDialog(
                 "Sign Out",
                 isPresented: $showSignOutConfirm,
@@ -201,33 +225,57 @@ struct ProfileView: View {
             } message: {
                 Text("You'll need to sign in again to report or help rescue dogs.")
             }
+            .onAppear {
+                // If user name is still default or empty, attempt real name resolution
+                if appState.userName.isEmpty || appState.userName.lowercased() == "rescuer" {
+                    let uid = authManager.currentUserID
+                    guard !uid.isEmpty else { return }
+                    Task {
+                        await authManager.resolveAndPersistRealUserName(forUserID: uid)
+                        await MainActor.run {
+                            if !authManager.currentUserName.isEmpty && authManager.currentUserName.lowercased() != "rescuer" {
+                                appState.userName = authManager.currentUserName
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
     
     // MARK: - Polaroid Tilted Stack
     @ViewBuilder
     private func polaroidTiltedStack() -> some View {
-        // Show the user's own reported dog photos in the polaroids
-        let userReportedPhotos = appState.dogReports
-            .filter { report in
-                guard let uid = report.reporterUserID else { return false }
-                return uid == authManager.currentUserID
+        let currentUID = authManager.currentUserID
+        let cleanUserName = appState.userName.lowercased().replacingOccurrences(of: " ", with: "")
+        
+        let userFeedPhotos: [UIImage] = appState.feedPosts
+            .filter { post in
+                if let uid = post.userID, !uid.isEmpty, uid == currentUID { return true }
+                let postAuthor = post.username.replacingOccurrences(of: "_rescuer", with: "").replacingOccurrences(of: " ", with: "").lowercased()
+                return !cleanUserName.isEmpty && postAuthor == cleanUserName
             }
-            .compactMap { $0.customImage }
+            .flatMap { $0.images.isEmpty ? ($0.dogImage != nil ? [$0.dogImage!] : []) : $0.images }
+        
+        let userReportPhotos = appState.dogReports
+            .filter { $0.reporterUserID == currentUID || $0.rescuerUserID == currentUID }
+            .compactMap { $0.photos.first ?? $0.customImage }
+        
+        let combinedPhotos = userFeedPhotos + userReportPhotos
         
         ZStack {
             // Card 1 (Bottom tilted left)
-            polaroidSingleCard(date: "1 June 2026", image: userReportedPhotos.count > 2 ? userReportedPhotos[2] : nil)
+            polaroidSingleCard(date: "1 June 2026", image: combinedPhotos.count > 2 ? combinedPhotos[2] : nil)
                 .rotationEffect(.degrees(-12))
                 .offset(x: -60, y: 10)
             
             // Card 2 (Middle tilted slightly)
-            polaroidSingleCard(date: "1 July 2026", image: userReportedPhotos.count > 1 ? userReportedPhotos[1] : nil)
+            polaroidSingleCard(date: "1 July 2026", image: combinedPhotos.count > 1 ? combinedPhotos[1] : nil)
                 .rotationEffect(.degrees(-3))
                 .offset(x: -5, y: 0)
             
-            // Card 3 (Top tilted right — most recent report)
-            polaroidSingleCard(date: formattedCurrentDate(), image: userReportedPhotos.first)
+            // Card 3 (Top tilted right — most recent report/post)
+            polaroidSingleCard(date: formattedCurrentDate(), image: combinedPhotos.first)
                 .rotationEffect(.degrees(10))
                 .offset(x: 55, y: -10)
         }
@@ -277,6 +325,110 @@ struct ProfileView: View {
         let f = DateFormatter()
         f.dateFormat = "d MMMM yyyy"
         return f.string(from: Date())
+    }
+}
+
+// MARK: - Edit Profile Sheet
+struct EditProfileSheet: View {
+    @EnvironmentObject private var appState: AppState
+    @EnvironmentObject private var authManager: AuthManager
+    @Binding var isPresented: Bool
+    
+    @State private var name: String = ""
+    @State private var role: String = ""
+    
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 20) {
+                // Avatar with live preview
+                ZStack {
+                    Circle()
+                        .fill(AppColors.primaryBlue)
+                        .frame(width: 72, height: 72)
+                    
+                    if let initial = name.trimmingCharacters(in: .whitespacesAndNewlines).first {
+                        Text(String(initial).uppercased())
+                            .font(.system(size: 30, weight: .bold))
+                            .foregroundColor(.white)
+                    } else {
+                        Image(systemName: "person.crop.circle.fill")
+                            .font(.system(size: 72))
+                            .foregroundColor(.white)
+                    }
+                }
+                .padding(.top, 12)
+                
+                // Text Fields
+                VStack(alignment: .leading, spacing: 14) {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Display Name")
+                            .font(AppFonts.captionMedium())
+                            .foregroundColor(AppColors.gray600)
+                        
+                        TextField("Your full name", text: $name)
+                            .font(AppFonts.bodyMedium())
+                            .padding(12)
+                            .background(Color.white)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(AppColors.gray200, lineWidth: 1))
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("Role / Bio")
+                            .font(AppFonts.captionMedium())
+                            .foregroundColor(AppColors.gray600)
+                        
+                        TextField("e.g. Animal lover | Rescuer", text: $role)
+                            .font(AppFonts.bodyMedium())
+                            .padding(12)
+                            .background(Color.white)
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                            .overlay(RoundedRectangle(cornerRadius: 12).stroke(AppColors.gray200, lineWidth: 1))
+                    }
+                }
+                .padding(.horizontal, AppConstants.horizontalPadding)
+                
+                Spacer()
+                
+                // Save Button
+                Button {
+                    let cleanName = name.trimmingCharacters(in: .whitespacesAndNewlines)
+                    let cleanRole = role.trimmingCharacters(in: .whitespacesAndNewlines)
+                    appState.updateUserProfile(
+                        name: cleanName.isEmpty ? "Rescuer" : cleanName,
+                        role: cleanRole.isEmpty ? "Animal lover | Rescuer" : cleanRole
+                    )
+                    isPresented = false
+                } label: {
+                    Text("Save Changes")
+                        .font(AppFonts.button())
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: AppConstants.buttonHeight)
+                        .background(AppColors.primaryBlue)
+                        .clipShape(Capsule())
+                        .shadow(color: AppColors.primaryBlue.opacity(0.3), radius: 8, x: 0, y: 3)
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, AppConstants.horizontalPadding)
+                .padding(.bottom, 24)
+            }
+            .background(AppColors.primaryBackground)
+            .navigationTitle("Edit Profile")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Cancel") {
+                        isPresented = false
+                    }
+                    .foregroundColor(AppColors.primaryBlue)
+                }
+            }
+            .onAppear {
+                self.name = appState.userName == "Rescuer" ? "" : appState.userName
+                self.role = appState.userRole
+            }
+        }
     }
 }
 

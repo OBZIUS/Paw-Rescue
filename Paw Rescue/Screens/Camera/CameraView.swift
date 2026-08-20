@@ -1,11 +1,13 @@
 import SwiftUI
 import AVFoundation
+import PhotosUI
 
 /// Custom camera UI with photo count stack badge, Vision alert, and Apple liquid glass controls.
 struct CameraView: View {
     @EnvironmentObject private var appState: AppState
-    @ObservedObject var cameraManager: CameraManager = CameraManager()
+    @StateObject var cameraManager: CameraManager = CameraManager()
     @Binding var isReportFlowPresented: Bool
+    var maxPhotos: Int = 5
     var onPhotosCaptured: (([UIImage]) -> Void)? = nil
     var onBack: (() -> Void)? = nil
     var onReviewTapped: (() -> Void)? = nil
@@ -14,6 +16,8 @@ struct CameraView: View {
     @State private var showReviewPhotos = false
     @State private var showReportForm = false
     @State private var selectedZoom: CGFloat = 1.0
+    @State private var showPhotosPicker = false
+    @State private var selectedPickerItems: [PhotosPickerItem] = []
     
     var body: some View {
         NavigationStack {
@@ -21,7 +25,7 @@ struct CameraView: View {
                 Color.black.ignoresSafeArea()
                 
                 VStack(spacing: 0) {
-                    // Top Bar with Liquid Glass Close Button
+                    // Top Bar with Liquid Glass Close Button and Photo Library Button
                     HStack {
                         Button {
                             if let onBack = onBack {
@@ -38,6 +42,20 @@ struct CameraView: View {
                         .overlay(Circle().stroke(Color.white.opacity(0.3), lineWidth: 1))
                         
                         Spacer()
+                        
+                        // Gallery Button in Top Bar
+                        if cameraManager.canCaptureMore {
+                            Button {
+                                showPhotosPicker = true
+                            } label: {
+                                Image(systemName: "photo.on.rectangle")
+                                    .font(.system(size: 16, weight: .medium))
+                                    .foregroundColor(.white)
+                            }
+                            .frame(width: 36, height: 36)
+                            .background(.ultraThinMaterial, in: Circle())
+                            .overlay(Circle().stroke(Color.white.opacity(0.3), lineWidth: 1))
+                        }
                     }
                     .padding(.horizontal, AppConstants.horizontalPadding)
                     .padding(.top, 10)
@@ -78,7 +96,7 @@ struct CameraView: View {
                     VStack(spacing: AppConstants.spacingL) {
                         // Capture controls row
                         HStack {
-                            // Photo stack thumbnail with counter badge
+                            // Photo stack thumbnail with counter badge OR Gallery Button
                             if !cameraManager.capturedPhotos.isEmpty, let lastImage = cameraManager.lastCapturedImage {
                                 Button {
                                     if let onReviewTapped = onReviewTapped {
@@ -125,13 +143,20 @@ struct CameraView: View {
                                 }
                                 .buttonStyle(.plain)
                             } else {
-                                Color.clear
-                                    .frame(width: AppConstants.thumbnailSize, height: AppConstants.thumbnailSize)
+                                Button {
+                                    showPhotosPicker = true
+                                } label: {
+                                    Image(systemName: "photo.on.rectangle.angled")
+                                        .font(.system(size: 22, weight: .medium))
+                                        .foregroundColor(.white)
+                                        .frame(width: AppConstants.thumbnailSize, height: AppConstants.thumbnailSize)
+                                }
+                                .buttonStyle(.plain)
                             }
                             
                             Spacer()
                             
-                            // Capture button (disabled if 5 reached)
+                            // Capture button (disabled if max reached)
                             Button {
                                 cameraManager.capturePhoto()
                             } label: {
@@ -164,7 +189,10 @@ struct CameraView: View {
                                 .buttonStyle(.plain)
                             } else {
                                 Button {
-                                    if let onReviewTapped = onReviewTapped {
+                                    if let onPhotosCaptured = onPhotosCaptured {
+                                        onPhotosCaptured(cameraManager.capturedPhotos)
+                                        dismiss()
+                                    } else if let onReviewTapped = onReviewTapped {
                                         onReviewTapped()
                                     } else {
                                         showReviewPhotos = true
@@ -201,12 +229,35 @@ struct CameraView: View {
                 }
             }
             .navigationBarHidden(true)
+            .photosPicker(
+                isPresented: $showPhotosPicker,
+                selection: $selectedPickerItems,
+                maxSelectionCount: max(1, cameraManager.maxPhotos - cameraManager.capturedPhotos.count),
+                matching: .images
+            )
+            .onChange(of: selectedPickerItems) { _, items in
+                guard !items.isEmpty else { return }
+                Task {
+                    for item in items {
+                        if let data = try? await item.loadTransferable(type: Data.self),
+                           let image = UIImage(data: data) {
+                            await MainActor.run {
+                                cameraManager.verifyAndAddGalleryImage(image)
+                            }
+                        }
+                    }
+                    await MainActor.run {
+                        selectedPickerItems.removeAll()
+                    }
+                }
+            }
             .alert("No Dog Detected", isPresented: $cameraManager.showNoDogAlert) {
                 Button("Try Again", role: .cancel) { }
             } message: {
-                Text("We couldn't detect a dog in this picture. Please ensure the dog is clearly in frame and try again.")
+                Text("We couldn't detect a dog in this picture. Please choose or capture a clear photo of the dog and try again.")
             }
             .onAppear {
+                cameraManager.maxPhotos = maxPhotos
                 cameraManager.setupSession()
             }
             .onDisappear {
@@ -215,7 +266,12 @@ struct CameraView: View {
             .onChange(of: cameraManager.capturedPhotos.count) { _, newCount in
                 if newCount >= cameraManager.maxPhotos {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                        showReviewPhotos = true
+                        if let onPhotosCaptured = onPhotosCaptured {
+                            onPhotosCaptured(cameraManager.capturedPhotos)
+                            dismiss()
+                        } else {
+                            showReviewPhotos = true
+                        }
                     }
                 }
             }

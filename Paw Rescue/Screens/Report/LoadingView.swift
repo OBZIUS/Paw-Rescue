@@ -65,21 +65,18 @@ struct LoadingView: View {
                 }
             }
             
-            // Save report into live app data
-            let createdReport = appState.submitReport(formData: appState.currentFormData)
-            
-            // Navigate to "Report Created" screen after animation completes
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.6) {
-                showReportCreated = true
+            // Navigate to "Edit Report" confirmation screen after animation completes
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.4) {
+                showEditReport = true
             }
         }
-        .fullScreenCover(isPresented: $showReportCreated) {
-            if let report = appState.lastSubmittedReport {
-                ReportCreatedView(report: report, isReportFlowPresented: $isReportFlowPresented)
-                    .environmentObject(appState)
-            }
+        .fullScreenCover(isPresented: $showEditReport) {
+            EditCaseView(isReportFlowPresented: $isReportFlowPresented)
+                .environmentObject(appState)
         }
     }
+    
+    @State private var showEditReport = false
 }
 
 #Preview {

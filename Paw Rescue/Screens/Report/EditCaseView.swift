@@ -1,17 +1,47 @@
 import SwiftUI
 import MapKit
+import CoreLocation
 
-/// Case overview and editing screen matching reference design.
+/// Step 4: Confirmation Screen / Edit Report before final publishing.
 struct EditCaseView: View {
     @EnvironmentObject private var appState: AppState
-    let report: DogReport
     @Binding var isReportFlowPresented: Bool
     @Environment(\.dismiss) private var dismiss
     
     @State private var isEditingDescription: Bool = false
     @State private var editedDescription: String = ""
     @State private var selectedPhotoIndex: Int = 0
-    @State private var showPlacePin: Bool = false
+    @State private var showThankYou: Bool = false
+    @State private var submittedReport: DogReport?
+    
+    private var formData: ReportFormData {
+        appState.currentFormData
+    }
+    
+    private var locationName: String {
+        formData.locationName ?? "Gang Mayura, Kuta"
+    }
+    
+    private var symptoms: [Symptom] {
+        var list: [Symptom] = []
+        if let wound = formData.woundStatus, wound.contains("bleeding") && !wound.contains("no wound") {
+            list.append(Symptom(name: "Bleeding", iconName: "drop.fill"))
+        }
+        if let mobility = formData.mobilityStatus, mobility.contains("Struggles") || mobility.contains("Can't move") {
+            list.append(Symptom(name: "Limping", iconName: "figure.walk"))
+        }
+        for cue in formData.visualCues {
+            if cue.contains("Ribs") {
+                list.append(Symptom(name: "Malnourished", iconName: "exclamationmark.triangle.fill"))
+            } else if cue.contains("Bald") || cue.contains("Crusty") {
+                list.append(Symptom(name: "Skin Issue", iconName: "allergens"))
+            }
+        }
+        if list.isEmpty {
+            list.append(Symptom(name: "Needs Care", iconName: "heart.fill"))
+        }
+        return list
+    }
     
     var body: some View {
         NavigationStack {
@@ -24,7 +54,7 @@ struct EditCaseView: View {
                         // Header with Liquid Glass Back Button & Title
                         HStack {
                             Button {
-                                isReportFlowPresented = false
+                                dismiss()
                             } label: {
                                 Image(systemName: "chevron.left")
                             }
@@ -32,7 +62,7 @@ struct EditCaseView: View {
                             
                             Spacer()
                             
-                            Text("Edit Case")
+                            Text("Edit Report")
                                 .font(AppFonts.title())
                                 .foregroundColor(AppColors.black)
                             
@@ -42,44 +72,48 @@ struct EditCaseView: View {
                         }
                         .padding(.top, AppConstants.spacingM)
                         
-                        // All clicked photos (Carousel / Horizontal Paging, NO edit pencil)
-                        if !report.photos.isEmpty {
-                            TabView(selection: $selectedPhotoIndex) {
-                                ForEach(Array(report.photos.enumerated()), id: \.offset) { index, photo in
-                                    Image(uiImage: photo)
-                                        .resizable()
-                                        .scaledToFill()
-                                        .frame(height: 220)
-                                        .clipShape(RoundedRectangle(cornerRadius: AppConstants.cornerRadiusXXL))
-                                        .tag(index)
+                        // Dog photo with edit pencil
+                        ZStack(alignment: .topTrailing) {
+                            if !formData.photos.isEmpty {
+                                TabView(selection: $selectedPhotoIndex) {
+                                    ForEach(Array(formData.photos.enumerated()), id: \.offset) { index, photo in
+                                        Image(uiImage: photo)
+                                            .resizable()
+                                            .scaledToFill()
+                                            .frame(height: 220)
+                                            .clipShape(RoundedRectangle(cornerRadius: AppConstants.cornerRadiusXXL))
+                                            .tag(index)
+                                    }
                                 }
-                            }
-                            .frame(height: 220)
-                            .tabViewStyle(.page(indexDisplayMode: report.photos.count > 1 ? .always : .never))
-                            .clipShape(RoundedRectangle(cornerRadius: AppConstants.cornerRadiusXXL))
-                            .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 3)
-                            .padding(.top, 4)
-                        } else if let customImage = report.customImage {
-                            Image(uiImage: customImage)
-                                .resizable()
-                                .scaledToFill()
-                                .frame(maxWidth: .infinity)
                                 .frame(height: 220)
+                                .tabViewStyle(.page(indexDisplayMode: formData.photos.count > 1 ? .always : .never))
                                 .clipShape(RoundedRectangle(cornerRadius: AppConstants.cornerRadiusXXL))
                                 .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 3)
-                                .padding(.top, 4)
-                        } else {
-                            RoundedRectangle(cornerRadius: AppConstants.cornerRadiusXXL)
-                                .fill(AppColors.secondaryCream)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 220)
-                                .overlay(
-                                    Image(systemName: "pawprint.fill")
-                                        .font(.system(size: 60))
-                                        .foregroundColor(AppColors.primaryBlue.opacity(0.4))
-                                )
-                                .padding(.top, 4)
+                            } else {
+                                RoundedRectangle(cornerRadius: AppConstants.cornerRadiusXXL)
+                                    .fill(AppColors.secondaryCream)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: 220)
+                                    .overlay(
+                                        Image(systemName: "pawprint.fill")
+                                            .font(.system(size: 60))
+                                            .foregroundColor(AppColors.primaryBlue.opacity(0.4))
+                                    )
+                            }
+                            
+                            // Edit Pencil Icon on top-right
+                            Button {
+                                dismiss()
+                            } label: {
+                                Image(systemName: "pencil")
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundColor(.white)
+                                    .frame(width: 32, height: 32)
+                                    .background(Color.black.opacity(0.6), in: Circle())
+                            }
+                            .padding(12)
                         }
+                        .padding(.top, 4)
                         
                         // Description Card with interactive inline editing
                         VStack(alignment: .leading, spacing: 8) {
@@ -91,11 +125,6 @@ struct EditCaseView: View {
                                 Spacer()
                                 
                                 Button {
-                                    if isEditingDescription {
-                                        appState.updateReportDescription(reportId: report.id, newDescription: editedDescription)
-                                    } else {
-                                        editedDescription = report.description
-                                    }
                                     withAnimation {
                                         isEditingDescription.toggle()
                                     }
@@ -126,10 +155,17 @@ struct EditCaseView: View {
                                             .stroke(AppColors.primaryBlue.opacity(0.5), lineWidth: 1)
                                     )
                             } else {
-                                Text(report.description)
-                                    .font(AppFonts.bodyMedium())
-                                    .foregroundColor(AppColors.black)
-                                    .lineSpacing(3)
+                                if editedDescription.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                                    Text("Add description (tap pencil to edit)...")
+                                        .font(AppFonts.bodyMedium())
+                                        .foregroundColor(AppColors.gray400)
+                                        .italic()
+                                } else {
+                                    Text(editedDescription)
+                                        .font(AppFonts.bodyMedium())
+                                        .foregroundColor(AppColors.black)
+                                        .lineSpacing(3)
+                                }
                             }
                         }
                         .padding(18)
@@ -143,9 +179,9 @@ struct EditCaseView: View {
                             HStack(spacing: 8) {
                                 Image(systemName: "mappin.circle.fill")
                                     .font(.system(size: 24))
-                                    .foregroundColor(report.urgency.color)
+                                    .foregroundColor(formData.calculatedUrgency.color)
                                 
-                                Text(report.location)
+                                Text(locationName)
                                     .font(AppFonts.bodySemibold())
                                     .foregroundColor(AppColors.black)
                             }
@@ -153,7 +189,9 @@ struct EditCaseView: View {
                             Spacer()
                             
                             Button {
-                                openAppleMaps(coordinate: report.coordinate, name: report.location)
+                                if let coord = formData.selectedCoordinate {
+                                    openAppleMaps(coordinate: coord, name: locationName)
+                                }
                             } label: {
                                 Text("Direction")
                                     .font(AppFonts.bodyMedium())
@@ -164,22 +202,22 @@ struct EditCaseView: View {
                         }
                         .padding(.vertical, 8)
                         
-                        // Symptoms (NO pencil button)
+                        // Symptoms Card
                         VStack(alignment: .leading, spacing: AppConstants.spacingM) {
                             Text("Symptoms")
                                 .font(AppFonts.bodySemibold())
                                 .foregroundColor(AppColors.black)
                             
-                            ForEach(report.symptoms) { symptom in
+                            ForEach(symptoms) { symptom in
                                 HStack(spacing: 12) {
                                     ZStack {
                                         Circle()
-                                            .fill(report.urgency.color.opacity(0.15))
+                                            .fill(formData.calculatedUrgency.color.opacity(0.15))
                                             .frame(width: 38, height: 38)
                                         
                                         Image(systemName: symptom.iconName)
                                             .font(.system(size: 17, weight: .medium))
-                                            .foregroundColor(report.urgency.color)
+                                            .foregroundColor(formData.calculatedUrgency.color)
                                     }
                                     
                                     Text(symptom.name)
@@ -197,20 +235,18 @@ struct EditCaseView: View {
                         Spacer()
                             .frame(height: 20)
                         
-                        // Mark as done / Place Pin on Map
+                        // Post Report Button
                         Button {
-                            if isEditingDescription {
-                                appState.updateReportDescription(reportId: report.id, newDescription: editedDescription)
-                            }
-                            showPlacePin = true
+                            publishReport()
                         } label: {
-                            Text("Mark as done")
+                            Text("Post Report")
                                 .font(AppFonts.button())
                                 .foregroundColor(AppColors.white)
                                 .frame(maxWidth: .infinity)
                                 .frame(height: AppConstants.buttonHeight)
                                 .background(AppColors.primaryBlue)
                                 .clipShape(Capsule())
+                                .shadow(color: AppColors.primaryBlue.opacity(0.35), radius: 8, x: 0, y: 4)
                         }
                         .buttonStyle(.plain)
                         .padding(.bottom, AppConstants.spacingHuge)
@@ -219,14 +255,30 @@ struct EditCaseView: View {
                 }
             }
             .navigationBarHidden(true)
-            .fullScreenCover(isPresented: $showPlacePin) {
-                PlacePinMapView(report: report, isReportFlowPresented: $isReportFlowPresented)
-                    .environmentObject(appState)
+            .fullScreenCover(isPresented: $showThankYou) {
+                if let report = submittedReport ?? appState.lastSubmittedReport {
+                    ReportCreatedView(report: report, isReportFlowPresented: $isReportFlowPresented)
+                        .environmentObject(appState)
+                }
             }
             .onAppear {
-                editedDescription = report.description
+                // Description starts empty or with what user typed in form
+                editedDescription = formData.additionalDescription
             }
         }
+    }
+    
+    private func publishReport() {
+        var finalFormData = appState.currentFormData
+        finalFormData.additionalDescription = editedDescription
+        
+        let report = appState.submitReport(
+            formData: finalFormData,
+            customCoordinate: finalFormData.selectedCoordinate,
+            locationName: locationName
+        )
+        submittedReport = report
+        showThankYou = true
     }
     
     private func openAppleMaps(coordinate: CLLocationCoordinate2D, name: String) {

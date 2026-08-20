@@ -19,7 +19,7 @@ final class CameraManager: NSObject, ObservableObject {
     private var currentDevice: AVCaptureDevice?
     private var isConfigured = false
     
-    let maxPhotos = 5
+    var maxPhotos: Int = 5
     
     var canCaptureMore: Bool {
         capturedPhotos.count < maxPhotos
@@ -83,15 +83,23 @@ final class CameraManager: NSObject, ObservableObject {
         let sampleImage = generateRealisticSimulatorDogImage()
         processAndVerifyImage(sampleImage)
         #else
-        if photoOutput.connection(with: .video) != nil {
-            isVerifyingPhoto = true
-            let settings = AVCapturePhotoSettings()
-            settings.flashMode = .auto
-            photoOutput.capturePhoto(with: settings, delegate: self)
-        } else {
-            let sampleImage = generateRealisticSimulatorDogImage()
-            processAndVerifyImage(sampleImage)
+        isVerifyingPhoto = true
+        
+        // Safety timeout: automatically unfreezes after 4s if hardware photo output drops delegate call
+        DispatchQueue.main.asyncAfter(deadline: .now() + 4.0) { [weak self] in
+            if self?.isVerifyingPhoto == true {
+                self?.isVerifyingPhoto = false
+            }
         }
+        
+        let settings = AVCapturePhotoSettings()
+        if let device = currentDevice, device.hasFlash, device.isFlashAvailable {
+            settings.flashMode = .auto
+        } else {
+            settings.flashMode = .off
+        }
+        
+        photoOutput.capturePhoto(with: settings, delegate: self)
         #endif
     }
     
@@ -111,6 +119,12 @@ final class CameraManager: NSObject, ObservableObject {
                 }
             }
         }
+    }
+    
+    /// Verifies a gallery image with Apple Vision and strictly adds it only if a dog is detected
+    func verifyAndAddGalleryImage(_ image: UIImage) {
+        guard canCaptureMore, !isVerifyingPhoto else { return }
+        processAndVerifyImage(image)
     }
     
     /// Generates a valid sample dog image for simulator testing that passes Vision

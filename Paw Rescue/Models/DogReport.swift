@@ -48,6 +48,7 @@ struct DogReport: Identifiable {
     var symptoms: [Symptom]
     var isAssignedToUser: Bool = false
     var isCompleted: Bool = false
+    var creationDate: Date? = nil
     
     init(
         id: UUID = UUID(),
@@ -70,7 +71,8 @@ struct DogReport: Identifiable {
         description: String,
         symptoms: [Symptom],
         isAssignedToUser: Bool = false,
-        isCompleted: Bool = false
+        isCompleted: Bool = false,
+        creationDate: Date? = nil
     ) {
         self.id = id
         self.cloudKitRecordName = cloudKitRecordName
@@ -93,45 +95,74 @@ struct DogReport: Identifiable {
         self.symptoms = symptoms
         self.isAssignedToUser = isAssignedToUser
         self.isCompleted = isCompleted
+        self.creationDate = creationDate ?? Date()
     }
     
     // MARK: - CloudKit Deserialization
     
-    /// Initialises a DogReport from a CloudKit CKRecord.
-    /// Photos are loaded asynchronously via CloudKitManager.resolvePhotos(from:).
+    /// Initialises a DogReport from a CloudKit CKRecord with fail-safe defaults for missing fields.
     init?(from record: CKRecord) {
-        // CloudKit returns numbers as NSNumber — extract .doubleValue safely
-        guard
-            let title         = record[CKReportField.title]        as? String,
-            let reporterName  = record[CKReportField.reporterName]  as? String,
-            let location      = record[CKReportField.location]      as? String,
-            let latNum        = record[CKReportField.latitude]      as? NSNumber,
-            let lonNum        = record[CKReportField.longitude]     as? NSNumber,
-            let urgencyRaw    = record[CKReportField.urgencyRaw]    as? String,
-            let urgency       = UrgencyLevel(rawValue: urgencyRaw),
-            let description   = record[CKReportField.description]   as? String
-        else { return nil }
-        let latitude  = latNum.doubleValue
-        let longitude = lonNum.doubleValue
+        // Robust coordinate extraction (handles NSNumber or Double)
+        let latitude: Double
+        if let latNum = record[CKReportField.latitude] as? NSNumber {
+            latitude = latNum.doubleValue
+        } else if let latDbl = record[CKReportField.latitude] as? Double {
+            latitude = latDbl
+        } else {
+            return nil
+        }
         
-        self.id                  = UUID()
+        let longitude: Double
+        if let lonNum = record[CKReportField.longitude] as? NSNumber {
+            longitude = lonNum.doubleValue
+        } else if let lonDbl = record[CKReportField.longitude] as? Double {
+            longitude = lonDbl
+        } else {
+            return nil
+        }
+        
+        let titleRaw       = record[CKReportField.title]        as? String ?? "Dog"
+        let locationRaw    = record[CKReportField.location]     as? String ?? "Bali"
+        let reporterName   = record[CKReportField.reporterName] as? String ?? "Anonymous"
+        let urgencyRaw     = record[CKReportField.urgencyRaw]   as? String ?? "Medium"
+        let urgency        = UrgencyLevel(rawValue: urgencyRaw) ?? .medium
+        let descriptionRaw = record[CKReportField.description]  as? String ?? ""
+        
+        if let stableUUID = UUID(uuidString: record.recordID.recordName) {
+            self.id = stableUUID
+        } else {
+            let hash = record.recordID.recordName.utf8.reduce(5381) { ($0 << 5) &+ $0 &+ Int($1) }
+            self.id = UUID(uuidString: String(format: "%08x-0000-0000-0000-%012x", abs(hash), abs(hash))) ?? UUID()
+        }
         self.cloudKitRecordName  = record.recordID.recordName
-        self.reporterUserID      = record[CKReportField.reporterUserID] as? String
-        self.rescuerUserID       = record[CKReportField.rescuerUserID]  as? String
-        self.rescuerName         = record[CKReportField.rescuerName]    as? String
-        self.title               = title
+        let repUID = record[CKReportField.reporterUserID] as? String
+        self.reporterUserID      = (repUID?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false) ? repUID : nil
+        let rescUID = record[CKReportField.rescuerUserID] as? String
+        self.rescuerUserID       = (rescUID?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false) ? rescUID : nil
+        let rescName = record[CKReportField.rescuerName] as? String
+        self.rescuerName         = (rescName?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false) ? rescName : nil
+        self.title               = titleRaw
         self.reporterName        = reporterName
         self.reporterAvatarName  = "person.circle.fill"
         self.timeReported        = record[CKReportField.timeReported]   as? String ?? "Recently"
         self.dateFormatted       = record[CKReportField.dateFormatted]  as? String ?? ""
-        self.location            = location
+        self.location            = locationRaw
         self.distance            = record[CKReportField.distance]       as? String ?? ""
         self.coordinate          = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
         self.urgency             = urgency
-        self.description         = description
-        self.isCompleted         = (record[CKReportField.isCompleted] as? NSNumber)?.intValue == 1
+        self.description         = descriptionRaw
+        if let compNum = record[CKReportField.isCompleted] as? NSNumber {
+            self.isCompleted = compNum.intValue == 1
+        } else if let compInt = record[CKReportField.isCompleted] as? Int {
+            self.isCompleted = compInt == 1
+        } else if let compBool = record[CKReportField.isCompleted] as? Bool {
+            self.isCompleted = compBool
+        } else {
+            self.isCompleted = false
+        }
         self.isAssignedToUser    = false
         self.imageName           = nil
+        self.creationDate        = record.creationDate ?? Date()
         
         // Decode symptoms from JSON
         if let symptomsJSON = record[CKReportField.symptomsJSON] as? String,
@@ -142,10 +173,20 @@ struct DogReport: Identifiable {
             self.symptoms = [Symptom(name: "Needs Care", iconName: "heart.fill")]
         }
         
-        // Load cached photos synchronously (assets already downloaded by CloudKit)
+        // Instant thumbnail display
+        if let thumbData = record[CKReportField.thumbnailData] as? Data,
+           let thumbImage = UIImage(data: thumbData) {
+            self.customImage = thumbImage
+            self.photos = [thumbImage]
+        }
+        
+        // Load full cached photos
         let ckm = CloudKitManager.shared
-        self.photos      = ckm.resolvePhotos(from: record)
-        self.customImage = self.photos.first
+        let resolvedPhotos = ckm.resolvePhotos(from: record)
+        if !resolvedPhotos.isEmpty {
+            self.photos = resolvedPhotos
+            self.customImage = resolvedPhotos.first
+        }
     }
 }
 
@@ -153,15 +194,23 @@ struct DogReport: Identifiable {
 struct FeedPost: Identifiable {
     let id: UUID
     var cloudKitRecordName: String?   // CloudKit record name for like syncing
-    var userID: String?               // Apple ID of poster
-    var username: String
+    var userID: String?               // Apple ID of poster / helper
+    var username: String              // Display name of poster / helper
     var userAvatarName: String
+    
+    // Dual User Tagging (Helper & Original Reporter)
+    var helperUserID: String?
+    var helperUsername: String?
+    var reporterUserID: String?
+    var reporterUsername: String?
+    
     var dogImage: UIImage?
     var images: [UIImage] = []
     var caption: String
     var likeCount: Int = 0
     var isLiked: Bool = false
     var timeAgo: String = "Today"
+    var creationDate: Date? = nil
     
     init(
         id: UUID = UUID(),
@@ -169,50 +218,74 @@ struct FeedPost: Identifiable {
         userID: String? = nil,
         username: String,
         userAvatarName: String = "person.crop.circle.fill",
+        helperUserID: String? = nil,
+        helperUsername: String? = nil,
+        reporterUserID: String? = nil,
+        reporterUsername: String? = nil,
         dogImage: UIImage? = nil,
         images: [UIImage] = [],
         caption: String,
         likeCount: Int = 1,
         isLiked: Bool = false,
-        timeAgo: String = "Just now"
+        timeAgo: String = "Just now",
+        creationDate: Date? = nil
     ) {
         self.id                 = id
         self.cloudKitRecordName = cloudKitRecordName
         self.userID             = userID
         self.username           = username
         self.userAvatarName     = userAvatarName
+        self.helperUserID       = helperUserID ?? userID
+        self.helperUsername     = helperUsername ?? username
+        self.reporterUserID     = reporterUserID
+        self.reporterUsername   = reporterUsername
         self.dogImage           = dogImage ?? images.first
         self.images             = images.isEmpty ? (dogImage != nil ? [dogImage!] : []) : images
         self.caption            = caption
         self.likeCount          = likeCount
         self.isLiked            = isLiked
         self.timeAgo            = timeAgo
+        self.creationDate       = creationDate
     }
     
     // MARK: - CloudKit Deserialization
     
     /// Initialises a FeedPost from a CloudKit CKRecord.
     init?(from record: CKRecord) {
-        guard
-            let username = record[CKFeedField.username] as? String,
-            let caption  = record[CKFeedField.caption]  as? String
-        else { return nil }
+        let username = (record[CKFeedField.username] as? String) ?? "community_rescuer"
+        let caption  = (record[CKFeedField.caption]  as? String) ?? ""
+        let likedBy = (record[CKFeedField.likedByUsers] as? [String]) ?? []
+        let currentUID = AuthManager.shared.currentUserID
         
         self.id                 = UUID()
         self.cloudKitRecordName = record.recordID.recordName
         self.userID             = record[CKFeedField.userID]    as? String
         self.username           = username
         self.userAvatarName     = "person.crop.circle.fill"
+        self.helperUserID       = (record[CKFeedField.helperUserID] as? String) ?? (record[CKFeedField.userID] as? String)
+        self.helperUsername     = (record[CKFeedField.helperUsername] as? String) ?? username
+        self.reporterUserID     = record[CKFeedField.reporterUserID] as? String
+        self.reporterUsername   = record[CKFeedField.reporterUsername] as? String
         self.caption            = caption
         self.likeCount          = (record[CKFeedField.likeCount] as? NSNumber)?.intValue ?? 0
-        self.isLiked            = false  // resolved per-user in AppState
+        self.isLiked            = !currentUID.isEmpty && likedBy.contains(currentUID)
         self.timeAgo            = Self.relativeTime(from: record.creationDate)
+        self.creationDate       = record.creationDate
         
-        // Load cached images synchronously
+        // Instant thumbnail display
+        if let thumbData = record[CKFeedField.thumbnailData] as? Data,
+           let thumbImage = UIImage(data: thumbData) {
+            self.dogImage = thumbImage
+            self.images   = [thumbImage]
+        }
+        
+        // Load full cached images
         let ckm  = CloudKitManager.shared
         let imgs = ckm.resolveImages(from: record)
-        self.images   = imgs
-        self.dogImage = imgs.first
+        if !imgs.isEmpty {
+            self.images   = imgs
+            self.dogImage = imgs.first
+        }
     }
     
     // MARK: - Helper
@@ -236,6 +309,8 @@ struct ReportFormData {
     var mobilityStatus: String?
     var visualCues: Set<String> = []
     var additionalDescription: String = ""
+    var selectedCoordinate: CLLocationCoordinate2D?
+    var locationName: String?
     
     var calculatedUrgency: UrgencyLevel {
         UrgencyClassifier.classify(

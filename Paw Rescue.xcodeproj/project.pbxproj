@@ -44,6 +44,7 @@
 		A10035 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10035 /* ProfileView.swift */; };
 		A10036 /* RescuedDogsGridView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10036 /* RescuedDogsGridView.swift */; };
 		A10037 /* PlacePinMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10037 /* PlacePinMapView.swift */; };
+		A10038 /* PublicProfileSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B10038 /* PublicProfileSheet.swift */; };
 		CC1AD32B30366A0D00B0E198 /* ImageCacheManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC1AD32A30366A0D00B0E198 /* ImageCacheManager.swift */; };
 		CC1AD32C30366A0D00B0E198 /* AuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC1AD32830366A0D00B0E198 /* AuthManager.swift */; };
 		CC1AD32D30366A0D00B0E198 /* CloudKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC1AD32930366A0D00B0E198 /* CloudKitManager.swift */; };
@@ -87,6 +88,7 @@
 		B10035 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		B10036 /* RescuedDogsGridView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RescuedDogsGridView.swift; sourceTree = "<group>"; };
 		B10037 /* PlacePinMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlacePinMapView.swift; sourceTree = "<group>"; };
+		B10038 /* PublicProfileSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicProfileSheet.swift; sourceTree = "<group>"; };
 		C10001 /* Paw Rescue.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Paw Rescue.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		CC1AD3273036688800B0E198 /* Paw Rescue.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "Paw Rescue.entitlements"; sourceTree = "<group>"; };
 		CC1AD32830366A0D00B0E198 /* AuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthManager.swift; sourceTree = "<group>"; };
@@ -275,6 +277,7 @@
 			children = (
 				B10035 /* ProfileView.swift */,
 				B10036 /* RescuedDogsGridView.swift */,
+				B10038 /* PublicProfileSheet.swift */,
 			);
 			path = Profile;
 			sourceTree = "<group>";
@@ -397,6 +400,7 @@
 				A10035 /* ProfileView.swift in Sources */,
 				A10036 /* RescuedDogsGridView.swift in Sources */,
 				A10037 /* PlacePinMapView.swift in Sources */,
+				A10038 /* PublicProfileSheet.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

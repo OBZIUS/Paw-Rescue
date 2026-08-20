@@ -11,10 +11,13 @@ struct PawRescueApp: App {
             RootView()
                 .environmentObject(appState)
                 .environmentObject(authManager)
-                // Whenever auth state changes, sync userName + load data
+                // Whenever auth state changes, sync userName + navigate to map + load live data
                 .onChange(of: authManager.isAuthenticated) { _, authenticated in
                     if authenticated {
-                        appState.userName = authManager.currentUserName
+                        if !authManager.currentUserName.isEmpty && authManager.currentUserName.lowercased() != "rescuer" {
+                            appState.userName = authManager.currentUserName
+                        }
+                        appState.selectedTab = .map
                         appState.isSignedIn = true
                         appState.loadReports()
                         appState.loadFeedPosts()
@@ -26,7 +29,9 @@ struct PawRescueApp: App {
                 // On cold launch if already signed in, load fresh data
                 .onAppear {
                     if authManager.isAuthenticated && appState.isSignedIn {
-                        appState.userName = authManager.currentUserName
+                        if !authManager.currentUserName.isEmpty && authManager.currentUserName.lowercased() != "rescuer" {
+                            appState.userName = authManager.currentUserName
+                        }
                         appState.loadReports()
                         appState.loadFeedPosts()
                         appState.syncUserStats(userID: authManager.currentUserID)

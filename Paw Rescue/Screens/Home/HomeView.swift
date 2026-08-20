@@ -6,6 +6,7 @@ struct HomeView: View {
     @State private var selectedActivityReport: DogReport?
     @State private var showYourCase = false
     @State private var showProfile = false
+    @State private var selectedUserProfile: PublicUserProfile?
     
     var body: some View {
         NavigationStack {
@@ -117,7 +118,9 @@ struct HomeView: View {
                             } else {
                                 LazyVStack(spacing: AppConstants.spacingXXL) {
                                     ForEach(appState.feedPosts) { post in
-                                        FeedCardView(post: post)
+                                        FeedCardView(post: post) { profile in
+                                            selectedUserProfile = profile
+                                        }
                                     }
                                 }
                                 .padding(.horizontal, AppConstants.horizontalPadding)
@@ -141,6 +144,13 @@ struct HomeView: View {
                 ProfileView()
                     .environmentObject(appState)
                     .environmentObject(AuthManager.shared)
+            }
+            .sheet(item: $selectedUserProfile) { profile in
+                PublicProfileSheet(profile: profile)
+                    .presentationDetents([.medium, .large])
+                    .presentationDragIndicator(.visible)
+                    .presentationCornerRadius(AppConstants.cornerRadiusXXL)
+                    .environmentObject(appState)
             }
         }
     }
@@ -207,132 +217,229 @@ struct HomeView: View {
     }
 }
 
-// MARK: - Feed Card View with Multi-Photo Carousel and See More Expansion
+// MARK: - Feed Card View with Side-by-Side Before & After Images, Tappable User Profile, and Bottom-Right Timestamp
 struct FeedCardView: View {
     @EnvironmentObject private var appState: AppState
     let post: FeedPost
+    var onUserTapped: ((PublicUserProfile) -> Void)? = nil
     @State private var isExpanded: Bool = false
-    @State private var selectedIndex: Int = 0
     
-    private var allImages: [UIImage] {
-        if !post.images.isEmpty {
-            return post.images
-        } else if let single = post.dogImage {
-            return [single]
+    private var beforeImage: UIImage? {
+        post.images.first ?? post.dogImage
+    }
+    
+    private var afterImage: UIImage? {
+        if post.images.count > 1 {
+            return post.images[1]
         }
-        return []
+        return post.dogImage ?? post.images.first
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            // User Header
-            HStack(spacing: 10) {
-                ZStack {
-                    Circle()
-                        .fill(AppColors.primaryBlue.opacity(0.15))
-                        .frame(width: 34, height: 34)
-                    // Show first initial of username
-                    if let initial = post.username.first {
-                        Text(String(initial).uppercased())
-                            .font(.system(size: 15, weight: .bold))
-                            .foregroundColor(AppColors.primaryBlue)
-                    } else {
-                        Image(systemName: "person.crop.circle.fill")
-                            .font(.system(size: 22))
-                            .foregroundColor(AppColors.primaryBlue)
+        VStack(alignment: .leading, spacing: 12) {
+            // User Header (Collaborative Dual Profile: Rescuer & Reporter)
+            HStack(alignment: .center, spacing: 10) {
+                // 1. Helper / Rescuer Profile
+                Button {
+                    let profile = PublicUserProfile(userID: post.helperUserID ?? post.userID, username: post.helperUsername ?? post.username)
+                    onUserTapped?(profile)
+                } label: {
+                    HStack(spacing: 8) {
+                        let helperName = post.helperUsername ?? post.username
+                        let isAnon = helperName.lowercased().contains("anonymous")
+                        
+                        ZStack {
+                            Circle()
+                                .fill(isAnon ? AppColors.gray300.opacity(0.4) : AppColors.primaryBlue.opacity(0.15))
+                                .frame(width: 32, height: 32)
+                            
+                            if isAnon {
+                                Image(systemName: "person.fill.questionmark")
+                                    .font(.system(size: 13, weight: .semibold))
+                                    .foregroundColor(AppColors.gray600)
+                            } else if let initial = helperName.first {
+                                Text(String(initial).uppercased())
+                                    .font(.system(size: 14, weight: .bold))
+                                    .foregroundColor(AppColors.primaryBlue)
+                            } else {
+                                Image(systemName: "person.crop.circle.fill")
+                                    .font(.system(size: 20))
+                                    .foregroundColor(AppColors.primaryBlue)
+                            }
+                        }
+                        
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(isAnon ? "Anonymous" : helperName)
+                                .font(.system(size: 13, weight: .bold))
+                                .foregroundColor(AppColors.black)
+                            
+                            Text("Rescuer")
+                                .font(.system(size: 9.5, weight: .medium))
+                                .foregroundColor(AppColors.primaryBlue)
+                        }
                     }
                 }
+                .buttonStyle(.plain)
                 
-                Text(post.username)
-                    .font(AppFonts.bodySemibold())
-                    .foregroundColor(AppColors.black)
+                // 2. Reporter Profile (if tagged or known)
+                if let repName = post.reporterUsername, !repName.isEmpty {
+                    Image(systemName: "arrow.right")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(AppColors.gray400)
+                    
+                    Button {
+                        let repProfile = PublicUserProfile(userID: post.reporterUserID, username: repName)
+                        onUserTapped?(repProfile)
+                    } label: {
+                        HStack(spacing: 6) {
+                            ZStack {
+                                Circle()
+                                    .fill(Color.orange.opacity(0.15))
+                                    .frame(width: 26, height: 26)
+                                
+                                if let initial = repName.first {
+                                    Text(String(initial).uppercased())
+                                        .font(.system(size: 11, weight: .bold))
+                                        .foregroundColor(.orange)
+                                } else {
+                                    Image(systemName: "person.fill")
+                                        .font(.system(size: 11))
+                                        .foregroundColor(.orange)
+                                }
+                            }
+                            
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(repName)
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundColor(AppColors.gray700)
+                                
+                                Text("Reporter")
+                                    .font(.system(size: 9.5, weight: .medium))
+                                    .foregroundColor(AppColors.gray500)
+                            }
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+                
+                Spacer()
+            }
+            
+            // Side-by-Side "Before" and "After" Image Post Card
+            HStack(spacing: 10) {
+                // Left: Before Image (Reporter's Photo)
+                VStack(spacing: 6) {
+                    ZStack {
+                        if let before = beforeImage {
+                            Image(uiImage: before)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 180)
+                                .clipped()
+                                .clipShape(RoundedRectangle(cornerRadius: AppConstants.cornerRadiusXL))
+                        } else {
+                            RoundedRectangle(cornerRadius: AppConstants.cornerRadiusXL)
+                                .fill(AppColors.secondaryCream)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 180)
+                                .overlay(
+                                    Image(systemName: "pawprint.fill")
+                                        .font(.system(size: 32))
+                                        .foregroundColor(AppColors.primaryBlue.opacity(0.3))
+                                )
+                        }
+                    }
+                    
+                    Text("Before")
+                        .font(AppFonts.captionMedium())
+                        .foregroundColor(AppColors.gray500)
+                }
+                .frame(maxWidth: .infinity)
+                
+                // Right: After Image (Rescuer's Photo)
+                VStack(spacing: 6) {
+                    ZStack {
+                        if let after = afterImage {
+                            Image(uiImage: after)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 180)
+                                .clipped()
+                                .clipShape(RoundedRectangle(cornerRadius: AppConstants.cornerRadiusXL))
+                        } else {
+                            RoundedRectangle(cornerRadius: AppConstants.cornerRadiusXL)
+                                .fill(AppColors.secondaryCream)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 180)
+                                .overlay(
+                                    Image(systemName: "heart.fill")
+                                        .font(.system(size: 32))
+                                        .foregroundColor(AppColors.primaryBlue.opacity(0.3))
+                                )
+                        }
+                    }
+                    
+                    Text("After")
+                        .font(AppFonts.captionMedium())
+                        .foregroundColor(AppColors.gray500)
+                }
+                .frame(maxWidth: .infinity)
+            }
+            
+            // Bottom Action Row: Likes on Left, Timestamp on Right
+            HStack(alignment: .center) {
+                // Interactive Likes Button (Instagram style paw toggle)
+                Button {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) {
+                        appState.toggleLike(postId: post.id)
+                    }
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: post.isLiked ? "pawprint.fill" : "pawprint")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(post.isLiked ? AppColors.primaryBlue : AppColors.gray500)
+                            .scaleEffect(post.isLiked ? 1.15 : 1.0)
+                        
+                        Text("\(post.likeCount)")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundColor(AppColors.black)
+                    }
+                }
+                .buttonStyle(.plain)
                 
                 Spacer()
                 
+                // Post Timestamp in Bottom Right Corner
                 Text(post.timeAgo)
                     .font(AppFonts.caption())
-                    .foregroundColor(AppColors.gray400)
+                    .foregroundColor(AppColors.gray500)
             }
-            
-            // Post Image / Carousel
-            ZStack(alignment: .topTrailing) {
-                if !allImages.isEmpty {
-                    TabView(selection: $selectedIndex) {
-                        ForEach(Array(allImages.enumerated()), id: \.offset) { index, img in
-                            Image(uiImage: img)
-                                .resizable()
-                                .scaledToFill()
-                                .frame(height: 290)
-                                .clipped()
-                                .tag(index)
-                        }
-                    }
-                    .frame(height: 290)
-                    .tabViewStyle(.page(indexDisplayMode: allImages.count > 1 ? .always : .never))
-                    .clipShape(RoundedRectangle(cornerRadius: AppConstants.cornerRadiusXL))
-                } else {
-                    RoundedRectangle(cornerRadius: AppConstants.cornerRadiusXL)
-                        .fill(AppColors.secondaryCream)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 290)
-                        .overlay(
-                            Image(systemName: "dog.fill")
-                                .font(.system(size: 70))
-                                .foregroundColor(AppColors.primaryBlue.opacity(0.35))
-                        )
-                }
-                
-                if allImages.count > 1 {
-                    Text("\(selectedIndex + 1)/\(allImages.count)")
-                        .font(.system(size: 11, weight: .bold))
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color.black.opacity(0.6), in: Capsule())
-                        .padding(10)
-                }
-            }
-            
-            // Interactive Likes row (Instagram style paw toggle)
-            Button {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) {
-                    appState.toggleLike(postId: post.id)
-                }
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: post.isLiked ? "pawprint.fill" : "pawprint")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(post.isLiked ? AppColors.primaryBlue : AppColors.gray500)
-                        .scaleEffect(post.isLiked ? 1.15 : 1.0)
-                    
-                    Text("\(post.likeCount)")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundColor(AppColors.black)
-                }
-            }
-            .buttonStyle(.plain)
             .padding(.top, 2)
             
-            // Caption with "... see more" button
-            VStack(alignment: .leading, spacing: 4) {
-                Text(post.caption)
-                    .font(.system(size: 15, weight: .regular))
-                    .foregroundColor(AppColors.black.opacity(0.88))
-                    .lineSpacing(4)
-                    .lineLimit(isExpanded ? nil : 2)
-                
-                if post.caption.count > 90 && !isExpanded {
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            isExpanded = true
+            // Caption with "... see more" expansion
+            if !post.caption.isEmpty {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(post.caption)
+                        .font(.system(size: 15, weight: .regular))
+                        .foregroundColor(AppColors.black.opacity(0.88))
+                        .lineSpacing(4)
+                        .lineLimit(isExpanded ? nil : 2)
+                    
+                    if post.caption.count > 90 && !isExpanded {
+                        Button {
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                isExpanded = true
+                            }
+                        } label: {
+                            Text("... see more")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(AppColors.primaryBlue)
                         }
-                    } label: {
-                        Text("... see more")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundColor(AppColors.primaryBlue)
+                        .buttonStyle(.plain)
+                        .padding(.top, 2)
                     }
-                    .buttonStyle(.plain)
-                    .padding(.top, 2)
                 }
             }
         }

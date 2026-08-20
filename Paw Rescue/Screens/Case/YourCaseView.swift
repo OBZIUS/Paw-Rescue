@@ -13,11 +13,21 @@ struct YourCaseView: View {
     @State private var selectedPhotoIndex: Int = 0
     
     private var currentUserID: String { AuthManager.shared.currentUserID }
+    
+    /// Always reads the freshest version of the report from the live store.
+    /// Falls back to the originally passed report if it's no longer in the array
+    /// (e.g. immediately after markCaseDone removes it from activeReports).
+    private var liveReport: DogReport {
+        appState.dogReports.first(where: { $0.cloudKitRecordName == report.cloudKitRecordName && report.cloudKitRecordName != nil })
+        ?? appState.dogReports.first(where: { $0.id == report.id })
+        ?? report
+    }
+    
     private var isReporter: Bool {
-        !currentUserID.isEmpty && report.reporterUserID == currentUserID
+        !currentUserID.isEmpty && liveReport.reporterUserID == currentUserID
     }
     private var isRescuer: Bool {
-        !currentUserID.isEmpty && report.rescuerUserID == currentUserID
+        !currentUserID.isEmpty && liveReport.rescuerUserID == currentUserID
     }
     
     var body: some View {
@@ -74,24 +84,35 @@ struct YourCaseView: View {
                                 .background(AppColors.primaryBlue.opacity(0.08))
                                 .clipShape(RoundedRectangle(cornerRadius: AppConstants.cornerRadiusXL))
                             } else if isReporter {
-                                // You reported this dog — show who's helping
-                                if let rescuerName = report.rescuerName, !rescuerName.isEmpty {
-                                    HStack(spacing: 10) {
-                                        Image(systemName: "checkmark.seal.fill")
-                                            .font(.system(size: 20))
-                                            .foregroundColor(AppColors.safe)
+                                // You reported this dog — show who's helping (live data)
+                                if let rescuerName = liveReport.rescuerName, !rescuerName.isEmpty {
+                                    HStack(spacing: 12) {
+                                        ZStack {
+                                            Circle()
+                                                .fill(AppColors.primaryBlue.opacity(0.12))
+                                                .frame(width: 36, height: 36)
+                                            Image(systemName: "figure.walk")
+                                                .font(.system(size: 16, weight: .semibold))
+                                                .foregroundColor(AppColors.primaryBlue)
+                                        }
+                                        
                                         VStack(alignment: .leading, spacing: 2) {
-                                            Text("\(rescuerName) is rescuing your dog 🐾")
+                                            Text("\(rescuerName) is rescuing your dog")
                                                 .font(AppFonts.bodySemibold())
-                                                .foregroundColor(AppColors.black)
+                                                .foregroundColor(AppColors.primaryBlue)
                                             Text("A rescuer is on their way")
                                                 .font(AppFonts.caption())
                                                 .foregroundColor(AppColors.gray500)
                                         }
+                                        
                                         Spacer()
+                                        
+                                        Image(systemName: "pawprint.fill")
+                                            .font(.system(size: 18))
+                                            .foregroundColor(AppColors.primaryBlue.opacity(0.5))
                                     }
                                     .padding(14)
-                                    .background(AppColors.safe.opacity(0.1))
+                                    .background(AppColors.primaryBlue.opacity(0.07))
                                     .clipShape(RoundedRectangle(cornerRadius: AppConstants.cornerRadiusXL))
                                 } else {
                                     HStack(spacing: 10) {
@@ -266,7 +287,7 @@ struct YourCaseView: View {
                                 Button {
                                     showThankYouDialog = true
                                 } label: {
-                                    Text("Mark as done")
+                                    Text("Dog helped")
                                         .font(AppFonts.button())
                                         .foregroundColor(.white)
                                         .frame(maxWidth: .infinity)
@@ -331,7 +352,7 @@ struct YourCaseView: View {
                             // Share to feed button
                             Button {
                                 showThankYouDialog = false
-                                appState.markCaseDone(reportId: report.id)
+                                appState.markCaseDone(reportId: liveReport.id, recordName: liveReport.cloudKitRecordName ?? report.cloudKitRecordName)
                                 showShareFeed = true
                             } label: {
                                 HStack(spacing: 8) {
@@ -351,7 +372,7 @@ struct YourCaseView: View {
                             // Continue button
                             Button {
                                 showThankYouDialog = false
-                                appState.markCaseDone(reportId: report.id)
+                                appState.markCaseDone(reportId: liveReport.id, recordName: liveReport.cloudKitRecordName ?? report.cloudKitRecordName)
                                 dismiss()
                             } label: {
                                 Text("Continue")

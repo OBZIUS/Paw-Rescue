@@ -12,7 +12,6 @@ struct SignInView: View {
                 .ignoresSafeArea()
             
             VStack(spacing: 0) {
-                // Top Title: "Get started"
                 Text("Get started")
                     .font(.system(size: 40, weight: .bold))
                     .foregroundColor(AppColors.black)
@@ -20,7 +19,7 @@ struct SignInView: View {
                 
                 Spacer()
                 
-                // Center Ball Bouncing & Growing App Logo
+                // App Logo
                 Group {
                     if UIImage(named: "AppLogo") != nil {
                         Image("AppLogo")
@@ -33,14 +32,12 @@ struct SignInView: View {
                             .foregroundColor(AppColors.primaryBlue)
                     }
                 }
-                // Ball bounce motion with growth
                 .scaleEffect(isBouncing ? 1.54 : 1.56)
                 .offset(y: isBouncing ? -20 : 6)
                 
                 Spacer()
                     .frame(height: 48)
                 
-                // Supporting text
                 Text("A quick sign-in keeps our rescue community safe and trusted, so we can focus on helping dogs in need.")
                     .font(.system(size: 20, weight: .regular))
                     .foregroundColor(Color(hex: "6C707A"))
@@ -49,15 +46,61 @@ struct SignInView: View {
                     .padding(.horizontal, 40)
                     .padding(.top, 60)
                 
+                // Error message
+                if let errMsg = authManager.signInErrorMessage {
+                    HStack(spacing: 8) {
+                        Image(systemName: "exclamationmark.circle.fill")
+                            .foregroundColor(.red)
+                        Text(errMsg)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.red)
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding(.horizontal, 32)
+                    .padding(.top, 16)
+                }
+                
                 Spacer()
                 
-                // MARK: - Real Sign In with Apple Button
-                // ASAuthorizationAppleIDButton wrapped in SwiftUI.
-                // Requires "Sign In with Apple" capability in Xcode → Signing & Capabilities.
-                AppleSignInButton {
-                    authManager.performSignIn(anchor: currentWindow())
+                // Native SwiftUI Apple Sign In Button
+                SignInWithAppleButton(.signIn) { request in
+                    request.requestedScopes = [.fullName, .email]
+                } onCompletion: { result in
+                    switch result {
+                    case .success(let authorization):
+                        authManager.handleAuthorization(authorization)
+                        appState.selectedTab = .map
+                        appState.isSignedIn = true
+                        appState.loadReports()
+                        appState.loadFeedPosts()
+
+                        // Apple only sends the real name on this device's very first
+                        // authorization — grab it into AppState right away so Profile
+                        // shows it instead of falling back to "Rescuer".
+                        if !authManager.currentUserName.isEmpty &&
+                            authManager.currentUserName.lowercased() != "rescuer" {
+                            appState.userName = authManager.currentUserName
+                        }
+
+                        // For returning users Apple won't resend the name, so resolve
+                        // it from CloudKit / iCloud identity and sync it in once found.
+                        let uid = authManager.currentUserID
+                        Task {
+                            await authManager.resolveAndPersistRealUserName(forUserID: uid)
+                            await MainActor.run {
+                                if !authManager.currentUserName.isEmpty &&
+                                    authManager.currentUserName.lowercased() != "rescuer" {
+                                    appState.userName = authManager.currentUserName
+                                }
+                            }
+                        }
+                    case .failure(let error):
+                        authManager.handleAuthorizationError(error)
+                    }
                 }
+                .signInWithAppleButtonStyle(.black)
                 .frame(height: 52)
+                .clipShape(Capsule())
                 .padding(.horizontal, 48)
                 .padding(.bottom, 50)
             }
@@ -70,40 +113,6 @@ struct SignInView: View {
                 isBouncing = true
             }
         }
-    }
-    
-    // MARK: - Helpers
-    private func currentWindow() -> UIWindow {
-        UIApplication.shared.connectedScenes
-            .compactMap { $0 as? UIWindowScene }
-            .flatMap { $0.windows }
-            .first { $0.isKeyWindow } ?? UIWindow()
-    }
-}
-
-// MARK: - Apple Sign In Button Wrapper
-/// Wraps ASAuthorizationAppleIDButton so it renders correctly in SwiftUI.
-struct AppleSignInButton: UIViewRepresentable {
-    var action: () -> Void
-    
-    func makeUIView(context: Context) -> ASAuthorizationAppleIDButton {
-        let button = ASAuthorizationAppleIDButton(
-            authorizationButtonType:  .signIn,
-            authorizationButtonStyle: .black
-        )
-        button.cornerRadius = 26
-        button.addTarget(context.coordinator, action: #selector(Coordinator.tapped), for: .touchUpInside)
-        return button
-    }
-    
-    func updateUIView(_ uiView: ASAuthorizationAppleIDButton, context: Context) {}
-    
-    func makeCoordinator() -> Coordinator { Coordinator(action: action) }
-    
-    final class Coordinator: NSObject {
-        let action: () -> Void
-        init(action: @escaping () -> Void) { self.action = action }
-        @objc func tapped() { action() }
     }
 }
 

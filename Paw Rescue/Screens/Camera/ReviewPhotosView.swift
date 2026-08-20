@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 
 /// Photo review grid with liquid glass back button, remove/add functionality.
 struct ReviewPhotosView: View {
@@ -10,6 +11,8 @@ struct ReviewPhotosView: View {
     var onContinueToForm: (() -> Void)? = nil
     @Environment(\.dismiss) private var dismiss
     @State private var showCamera = false
+    @State private var showPhotosPicker = false
+    @State private var selectedPickerItems: [PhotosPickerItem] = []
     
     private let columns = [
         GridItem(.flexible(), spacing: AppConstants.photoGridSpacing),
@@ -99,6 +102,33 @@ struct ReviewPhotosView: View {
                 }
             }
             .navigationBarHidden(true)
+            .photosPicker(
+                isPresented: $showPhotosPicker,
+                selection: $selectedPickerItems,
+                maxSelectionCount: max(1, cameraManager.maxPhotos - cameraManager.capturedPhotos.count),
+                matching: .images
+            )
+            .onChange(of: selectedPickerItems) { _, items in
+                guard !items.isEmpty else { return }
+                Task {
+                    for item in items {
+                        if let data = try? await item.loadTransferable(type: Data.self),
+                           let image = UIImage(data: data) {
+                            await MainActor.run {
+                                cameraManager.verifyAndAddGalleryImage(image)
+                            }
+                        }
+                    }
+                    await MainActor.run {
+                        selectedPickerItems.removeAll()
+                    }
+                }
+            }
+            .alert("No Dog Detected", isPresented: $cameraManager.showNoDogAlert) {
+                Button("Try Again", role: .cancel) { }
+            } message: {
+                Text("We couldn't detect a dog in this picture. Please choose or capture a clear photo of the dog and try again.")
+            }
             .fullScreenCover(isPresented: $showCamera) {
                 CameraView(
                     isReportFlowPresented: $isReportFlowPresented,
@@ -140,8 +170,18 @@ struct ReviewPhotosView: View {
     // MARK: - Add Photo Cell
     @ViewBuilder
     private func addPhotoCell() -> some View {
-        Button {
-            dismiss()
+        Menu {
+            Button {
+                dismiss()
+            } label: {
+                Label("Take Photo", systemImage: "camera")
+            }
+            
+            Button {
+                showPhotosPicker = true
+            } label: {
+                Label("Choose from Library", systemImage: "photo.on.rectangle")
+            }
         } label: {
             ZStack {
                 RoundedRectangle(cornerRadius: AppConstants.cornerRadiusMedium)

@@ -28,7 +28,7 @@ enum AppConstants {
     
     // MARK: - Map
     static let mapButtonSize: CGFloat = 56
-    static let pinSize: CGFloat = 40
+    static let pinSize: CGFloat = 26
     
     // MARK: - Camera
     static let captureButtonSize: CGFloat = 72

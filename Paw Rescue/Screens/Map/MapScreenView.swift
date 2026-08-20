@@ -21,7 +21,12 @@ struct MapScreenView: View {
     )
     
     private var activeReports: [DogReport] {
-        appState.dogReports.filter { !$0.isCompleted }
+        appState.dogReports.filter { report in
+            if report.isCompleted { return false }
+            if let name = report.cloudKitRecordName, appState.completedCaseRecordNames.contains(name) { return false }
+            if appState.completedCaseRecordNames.contains(report.id.uuidString) { return false }
+            return true
+        }
     }
     
     var body: some View {
@@ -45,9 +50,11 @@ struct MapScreenView: View {
                 
                 // Dog Case Annotations — real pins from CloudKit
                 ForEach(activeReports) { report in
+                    let isAccepted = (report.rescuerUserID != nil && !report.rescuerUserID!.isEmpty) || report.isAssignedToUser
                     Annotation(report.title, coordinate: report.coordinate) {
                         DogAnnotationView(
                             urgency: report.urgency,
+                            isAccepted: isAccepted,
                             isSelected: selectedReportId == report.id
                         )
                         .onTapGesture {
@@ -68,23 +75,27 @@ struct MapScreenView: View {
                 }
             }
             
-            // Loading indicator overlay when fetching reports
+            // Subtle top indicator when syncing reports
             if appState.isLoadingReports && activeReports.isEmpty {
                 VStack {
-                    HStack(spacing: 10) {
+                    HStack(spacing: 8) {
                         ProgressView()
-                            .tint(.white)
-                        Text("Loading rescue cases...")
+                            .tint(AppColors.primaryBlue)
+                            .scaleEffect(0.8)
+                        Text("Syncing cases...")
                             .font(AppFonts.captionMedium())
-                            .foregroundColor(.white)
+                            .foregroundColor(AppColors.black)
                     }
-                    .padding(.horizontal, 18)
-                    .padding(.vertical, 10)
-                    .background(Color.black.opacity(0.6), in: Capsule())
-                    .padding(.top, 60)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(Color.white.opacity(0.95), in: Capsule())
+                    .shadow(color: Color.black.opacity(0.1), radius: 6, x: 0, y: 2)
+                    .padding(.top, 56)
+                    .transition(.move(edge: .top).combined(with: .opacity))
                     
                     Spacer()
                 }
+                .animation(.easeInOut(duration: 0.25), value: appState.isLoadingReports)
             }
             
             // Bottom-Right Floating Camera Action Button + Tooltip (Image 2)
@@ -188,6 +199,7 @@ struct MapScreenView: View {
 final class MapLocationDelegate: NSObject, ObservableObject, CLLocationManagerDelegate {
     private let manager = CLLocationManager()
     private var onLocationReceived: ((CLLocationCoordinate2D) -> Void)?
+    private var hasFiredInitialLocation = false
     
     override init() {
         super.init()
@@ -197,17 +209,48 @@ final class MapLocationDelegate: NSObject, ObservableObject, CLLocationManagerDe
     
     func requestLocation(completion: @escaping (CLLocationCoordinate2D) -> Void) {
         self.onLocationReceived = completion
-        manager.requestWhenInUseAuthorization()
-        manager.requestLocation()
+        self.hasFiredInitialLocation = false
+        
+        let status = manager.authorizationStatus
+        switch status {
+        case .authorizedWhenInUse, .authorizedAlways:
+            // Already have permission — request immediately
+            manager.requestLocation()
+        case .notDetermined:
+            // Show the popup — location will be requested in the delegate callback once granted
+            manager.requestWhenInUseAuthorization()
+        case .denied, .restricted:
+            // Can't get location — stay on mock coordinate
+            break
+        @unknown default:
+            manager.requestWhenInUseAuthorization()
+        }
+    }
+    
+    // Called IMMEDIATELY when the user taps Allow or Deny on the permission popup
+    func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        switch manager.authorizationStatus {
+        case .authorizedWhenInUse, .authorizedAlways:
+            // Permission just granted — now request the real location
+            if !hasFiredInitialLocation {
+                manager.requestLocation()
+            }
+        default:
+            break
+        }
     }
     
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let loc = locations.last else { return }
-        onLocationReceived?(loc.coordinate)
+        hasFiredInitialLocation = true
+        DispatchQueue.main.async {
+            self.onLocationReceived?(loc.coordinate)
+        }
     }
     
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        // Fallback to Kuta Center gracefully
+        // Fallback to Kuta Center gracefully — no crash
+        print("[Location] Failed to get location: \(error.localizedDescription)")
     }
 }
 

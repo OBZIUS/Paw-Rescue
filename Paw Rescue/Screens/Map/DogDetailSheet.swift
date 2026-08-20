@@ -7,21 +7,30 @@ struct DogDetailSheet: View {
     @Binding var isPresented: Bool
     var onHelpTapped: (DogReport) -> Void
     
+    @State private var selectedUserProfile: PublicUserProfile?
+    
     private var currentUserID: String { AuthManager.shared.currentUserID }
+    
+    /// Always reads the freshest version of the report from the live store.
+    private var liveReport: DogReport {
+        appState.dogReports.first(where: { $0.cloudKitRecordName == report.cloudKitRecordName && report.cloudKitRecordName != nil })
+        ?? appState.dogReports.first(where: { $0.id == report.id })
+        ?? report
+    }
     
     /// True if the current user is the one who reported this dog
     private var isCurrentUserReporter: Bool {
-        !currentUserID.isEmpty && report.reporterUserID == currentUserID
+        !currentUserID.isEmpty && liveReport.reporterUserID == currentUserID
     }
     
     /// True if the current user is the one who accepted this rescue
     private var isCurrentUserRescuer: Bool {
-        !currentUserID.isEmpty && report.rescuerUserID == currentUserID
+        !currentUserID.isEmpty && liveReport.rescuerUserID == currentUserID
     }
     
     /// True if someone (not the current user) has already accepted the case
     private var isTakenByOther: Bool {
-        guard let rescuerID = report.rescuerUserID, !rescuerID.isEmpty else { return false }
+        guard let rescuerID = liveReport.rescuerUserID, !rescuerID.isEmpty else { return false }
         return rescuerID != currentUserID
     }
     
@@ -64,28 +73,41 @@ struct DogDetailSheet: View {
                     .padding(.horizontal, AppConstants.horizontalPadding)
                     .padding(.top, 12)
                     
-                    // Reporter info row
+                    // Reporter info row (Tappable to view public profile)
                     HStack {
-                        HStack(spacing: 10) {
-                            ZStack {
-                                Circle()
-                                    .fill(AppColors.secondaryCream)
-                                    .frame(width: 38, height: 38)
-                                Image(systemName: report.reporterAvatarName)
-                                    .font(.system(size: 24))
-                                    .foregroundColor(AppColors.primaryBlue)
-                            }
-                            
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Reported by \(report.reporterName)")
-                                    .font(AppFonts.bodySemibold())
-                                    .foregroundColor(AppColors.black)
+                        Button {
+                            selectedUserProfile = PublicUserProfile(
+                                userID: report.reporterUserID,
+                                username: report.reporterName
+                            )
+                        } label: {
+                            HStack(spacing: 10) {
+                                ZStack {
+                                    Circle()
+                                        .fill(AppColors.secondaryCream)
+                                        .frame(width: 38, height: 38)
+                                    Image(systemName: report.reporterAvatarName)
+                                        .font(.system(size: 24))
+                                        .foregroundColor(AppColors.primaryBlue)
+                                }
                                 
-                                Text(report.timeReported)
-                                    .font(AppFonts.caption())
-                                    .foregroundColor(AppColors.gray500)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    HStack(spacing: 4) {
+                                        Text("Reported by \(report.reporterName)")
+                                            .font(AppFonts.bodySemibold())
+                                            .foregroundColor(AppColors.black)
+                                        Image(systemName: "chevron.right")
+                                            .font(.system(size: 10, weight: .bold))
+                                            .foregroundColor(AppColors.gray400)
+                                    }
+                                    
+                                    Text(report.timeReported)
+                                        .font(AppFonts.caption())
+                                        .foregroundColor(AppColors.gray500)
+                                }
                             }
                         }
+                        .buttonStyle(.plain)
                         
                         Spacer()
                         
@@ -104,44 +126,57 @@ struct DogDetailSheet: View {
                     }
                     .padding(.horizontal, AppConstants.horizontalPadding)
                     
-                    // MARK: - Rescuer Status Banner
+                    // MARK: - Rescuer Status Banner (Uniform styling matching YourCaseView)
                     // Shows when someone has accepted the case
                     if let rescuerName = report.rescuerName, !rescuerName.isEmpty {
-                        HStack(spacing: 10) {
-                            ZStack {
-                                Circle()
-                                    .fill(AppColors.primaryBlue.opacity(0.12))
-                                    .frame(width: 36, height: 36)
-                                Image(systemName: "figure.walk")
-                                    .font(.system(size: 16, weight: .semibold))
-                                    .foregroundColor(AppColors.primaryBlue)
-                            }
-                            
-                            VStack(alignment: .leading, spacing: 2) {
-                                if isCurrentUserRescuer {
-                                    Text("You are rescuing this dog 🐾")
-                                        .font(AppFonts.bodySemibold())
-                                        .foregroundColor(AppColors.primaryBlue)
-                                } else {
-                                    Text("\(rescuerName) is on their way 🐾")
-                                        .font(AppFonts.bodySemibold())
+                        Button {
+                            selectedUserProfile = PublicUserProfile(
+                                userID: report.rescuerUserID,
+                                username: rescuerName
+                            )
+                        } label: {
+                            HStack(spacing: 12) {
+                                ZStack {
+                                    Circle()
+                                        .fill(AppColors.primaryBlue.opacity(0.12))
+                                        .frame(width: 36, height: 36)
+                                    Image(systemName: "figure.walk")
+                                        .font(.system(size: 16, weight: .semibold))
                                         .foregroundColor(AppColors.primaryBlue)
                                 }
-                                Text("This case has been accepted")
-                                    .font(AppFonts.caption())
-                                    .foregroundColor(AppColors.gray500)
+                                
+                                VStack(alignment: .leading, spacing: 2) {
+                                    if isCurrentUserRescuer {
+                                        Text("You are rescuing this dog")
+                                            .font(AppFonts.bodySemibold())
+                                            .foregroundColor(AppColors.primaryBlue)
+                                    } else {
+                                        HStack(spacing: 4) {
+                                            Text("\(rescuerName) is on their way")
+                                                .font(AppFonts.bodySemibold())
+                                                .foregroundColor(AppColors.primaryBlue)
+                                            Image(systemName: "chevron.right")
+                                                .font(.system(size: 10, weight: .bold))
+                                                .foregroundColor(AppColors.primaryBlue.opacity(0.6))
+                                        }
+                                    }
+                                    Text("Reported by \(report.reporterName)")
+                                        .font(AppFonts.caption())
+                                        .foregroundColor(AppColors.gray500)
+                                }
+                                
+                                Spacer()
+                                
+                                Image(systemName: "pawprint.fill")
+                                    .font(.system(size: 18))
+                                    .foregroundColor(AppColors.primaryBlue.opacity(0.5))
                             }
-                            
-                            Spacer()
-                            
-                            Image(systemName: "checkmark.seal.fill")
-                                .font(.system(size: 20))
-                                .foregroundColor(AppColors.safe)
+                            .padding(14)
+                            .background(AppColors.primaryBlue.opacity(0.07))
+                            .clipShape(RoundedRectangle(cornerRadius: AppConstants.cornerRadiusXL))
+                            .padding(.horizontal, AppConstants.horizontalPadding)
                         }
-                        .padding(12)
-                        .background(AppColors.primaryBlue.opacity(0.07))
-                        .clipShape(RoundedRectangle(cornerRadius: AppConstants.cornerRadiusXL))
-                        .padding(.horizontal, AppConstants.horizontalPadding)
+                        .buttonStyle(.plain)
                     }
                     
                     // Location row
@@ -256,35 +291,40 @@ struct DogDetailSheet: View {
                             .buttonStyle(.plain)
                             
                         } else if isTakenByOther {
-                            // Someone else accepted — show who + disabled button
-                            VStack(spacing: 8) {
-                                Text("Already being rescued by \(report.rescuerName ?? "someone")")
-                                    .font(AppFonts.captionMedium())
-                                    .foregroundColor(AppColors.gray500)
-                                    .multilineTextAlignment(.center)
-                                
-                                Button {
-                                    appState.assignCaseToUser(reportId: report.id)
-                                    isPresented = false
-                                    onHelpTapped(report)
-                                } label: {
-                                    Text("Help anyway")
-                                        .font(AppFonts.button())
-                                        .foregroundColor(AppColors.gray600)
-                                        .frame(maxWidth: .infinity)
-                                        .frame(height: AppConstants.buttonHeight)
-                                        .background(AppColors.gray200)
-                                        .clipShape(Capsule())
-                                }
-                                .buttonStyle(.plain)
+                            // Someone else accepted — show Got it dismiss button
+                            Button {
+                                isPresented = false
+                            } label: {
+                                Text("Got it")
+                                    .font(AppFonts.button())
+                                    .foregroundColor(AppColors.black)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: AppConstants.buttonHeight)
+                                    .background(AppColors.secondaryCream)
+                                    .clipShape(Capsule())
                             }
+                            .buttonStyle(.plain)
                             
+                        } else if liveReport.isCompleted {
+                            // Already completed
+                            Button {
+                                isPresented = false
+                            } label: {
+                                Text("This dog is already rescued")
+                                    .font(AppFonts.button())
+                                    .foregroundColor(AppColors.black)
+                                    .frame(maxWidth: .infinity)
+                                    .frame(height: AppConstants.buttonHeight)
+                                    .background(AppColors.secondaryCream)
+                                    .clipShape(Capsule())
+                            }
+                            .buttonStyle(.plain)
                         } else {
                             // Normal — first to accept
                             Button {
-                                appState.assignCaseToUser(reportId: report.id)
+                                appState.assignCaseToUser(reportId: liveReport.id, recordName: liveReport.cloudKitRecordName ?? report.cloudKitRecordName)
                                 isPresented = false
-                                onHelpTapped(report)
+                                onHelpTapped(liveReport)
                             } label: {
                                 Text("Help this dog")
                                     .font(AppFonts.button())
@@ -316,10 +356,22 @@ struct DogDetailSheet: View {
                         isPresented = false
                     } label: {
                         Image(systemName: "xmark")
-                            .font(.system(size: 13, weight: .semibold))
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(Color.black.opacity(0.75))
+                            .frame(width: 30, height: 30)
+                            .background(.ultraThinMaterial, in: Circle())
+                            .overlay(Circle().stroke(Color.white.opacity(0.6), lineWidth: 0.8))
+                            .shadow(color: Color.black.opacity(0.06), radius: 4, x: 0, y: 1)
                     }
-                    .buttonStyle(LiquidGlassCircleButtonStyle(size: 32))
+                    .buttonStyle(.plain)
                 }
+            }
+            .sheet(item: $selectedUserProfile) { profile in
+                PublicProfileSheet(profile: profile)
+                    .presentationDetents([.medium, .large])
+                    .presentationDragIndicator(.visible)
+                    .presentationCornerRadius(AppConstants.cornerRadiusXXL)
+                    .environmentObject(appState)
             }
         }
     }

@@ -29,16 +29,14 @@ struct ReportCreatedView: View {
                         }
                         .padding(.top, AppConstants.spacingM)
                         
-                        // Title
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("Important")
-                                .font(.system(size: 30, weight: .bold))
+                        // Title (Centered matching reference)
+                        VStack(spacing: 6) {
+                            Text("Thank you\nfor your report!")
+                                .font(.system(size: 28, weight: .bold))
                                 .foregroundColor(AppColors.black)
-                            
-                            Text("Your report is live on the rescue network.")
-                                .font(AppFonts.body())
-                                .foregroundColor(AppColors.gray500)
+                                .multilineTextAlignment(.center)
                         }
+                        .frame(maxWidth: .infinity)
                         .padding(.top, 4)
                         
                         // Priority Card (Triage algorithm result)
@@ -64,18 +62,22 @@ struct ReportCreatedView: View {
                         .clipShape(RoundedRectangle(cornerRadius: AppConstants.cornerRadiusXXL))
                         .shadow(color: Color.black.opacity(0.04), radius: 8, x: 0, y: 3)
                         
-                        // Safety Notice Card
-                        HStack(alignment: .top, spacing: 12) {
-                            Text("Do not touch or approach. An injured dog bites, and rabies is present in Bali. Stay back and let trained responders handle contact.")
+                        // Caution / Rabies Notice Card (Yellow tinted banner with bold red rabies)
+                        VStack(alignment: .leading, spacing: 6) {
+                            rabiesAttributedText()
                                 .font(AppFonts.body())
                                 .foregroundColor(AppColors.black.opacity(0.85))
                                 .lineSpacing(3)
                         }
-                        .padding(20)
+                        .padding(18)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color.white)
-                        .clipShape(RoundedRectangle(cornerRadius: AppConstants.cornerRadiusXXL))
-                        .shadow(color: Color.black.opacity(0.03), radius: 6, x: 0, y: 2)
+                        .background(Color(hex: "FFF8E1"))
+                        .clipShape(RoundedRectangle(cornerRadius: AppConstants.cornerRadiusXL))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: AppConstants.cornerRadiusXL)
+                                .stroke(Color(hex: "FFE082"), lineWidth: 1)
+                        )
+                        .shadow(color: Color.black.opacity(0.02), radius: 4, x: 0, y: 2)
                         
                         // Nearest Animal Shelter Section
                         Text("Nearest Animal Shelter")
@@ -94,17 +96,18 @@ struct ReportCreatedView: View {
                         Spacer()
                             .frame(height: 20)
                         
-                        // Continue Button -> Edit Case
+                        // Understood Button -> Dismisses entire report flow back to map
                         Button {
-                            showEditCase = true
+                            isReportFlowPresented = false
                         } label: {
-                            Text("Continue")
+                            Text("Understood")
                                 .font(AppFonts.button())
                                 .foregroundColor(AppColors.white)
                                 .frame(maxWidth: .infinity)
                                 .frame(height: AppConstants.buttonHeight)
                                 .background(AppColors.primaryBlue)
                                 .clipShape(Capsule())
+                                .shadow(color: AppColors.primaryBlue.opacity(0.35), radius: 8, x: 0, y: 4)
                         }
                         .buttonStyle(.plain)
                         .padding(.bottom, AppConstants.spacingHuge)
@@ -113,11 +116,17 @@ struct ReportCreatedView: View {
                 }
             }
             .navigationBarHidden(true)
-            .fullScreenCover(isPresented: $showEditCase) {
-                EditCaseView(report: report, isReportFlowPresented: $isReportFlowPresented)
-                    .environmentObject(appState)
-            }
         }
+    }
+    
+    private func rabiesAttributedText() -> Text {
+        Text("Do not touch or approach. ")
+            .fontWeight(.bold)
+        + Text("An injured dog bites, and ")
+        + Text("rabies")
+            .foregroundColor(.red)
+            .fontWeight(.bold)
+        + Text(" is present in Bali. Stay back and let trained responders handle contact.")
     }
     
     @ViewBuilder

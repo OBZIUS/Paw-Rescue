@@ -33,8 +33,11 @@ struct ReportFormView: View {
     private let question4Options = [
         "Ribs/Spine visible",
         "Bald skin patches",
-        "Crusty fur"
+        "Crusty fur",
+        "None"
     ]
+    
+    @State private var showPlacePin = false
     
     var body: some View {
         NavigationStack {
@@ -43,12 +46,10 @@ struct ReportFormView: View {
                     .ignoresSafeArea()
                 
                 VStack(spacing: 0) {
-                    // Header with Liquid Glass Back Button
+                    // Header with Top-Left Back Button (Always returns to Review Photo Screen)
                     HStack {
                         Button {
-                            if currentStep > 0 {
-                                withAnimation { currentStep -= 1 }
-                            } else if let onBack = onBack {
+                            if let onBack = onBack {
                                 onBack()
                             } else {
                                 dismiss()
@@ -104,7 +105,7 @@ struct ReportFormView: View {
                     
                     // Bottom Navigation Bar
                     HStack {
-                        // Liquid Glass Prev Button
+                        // Liquid Glass Prev Button (Returns to previous question in form)
                         if currentStep > 0 {
                             Button {
                                 withAnimation {
@@ -145,10 +146,10 @@ struct ReportFormView: View {
                             .buttonStyle(.plain)
                         }
                         
-                        // Step 5 Submit Continue Button
+                        // Step 5 Submit Continue Button -> Opens Place Pin on Map Screen (Step 2)
                         if currentStep == totalSteps - 1 {
                             Button {
-                                saveAndSubmit()
+                                saveAndProceedToMap()
                             } label: {
                                 Text("Continue")
                                     .font(AppFonts.button())
@@ -166,14 +167,14 @@ struct ReportFormView: View {
                 }
             }
             .navigationBarHidden(true)
-            .fullScreenCover(isPresented: $showLoading) {
-                LoadingView(isReportFlowPresented: $isReportFlowPresented)
+            .fullScreenCover(isPresented: $showPlacePin) {
+                PlacePinMapView(isReportFlowPresented: $isReportFlowPresented)
                     .environmentObject(appState)
             }
         }
     }
     
-    private func saveAndSubmit() {
+    private func saveAndProceedToMap() {
         appState.currentFormData.photos = cameraManager.capturedPhotos
         appState.currentFormData.hasBittenOrRabiesSymptoms = selectedAnswer1
         appState.currentFormData.woundStatus = selectedAnswer2
@@ -181,7 +182,7 @@ struct ReportFormView: View {
         appState.currentFormData.visualCues = selectedVisualCues
         appState.currentFormData.additionalDescription = additionalDescription
         
-        showLoading = true
+        showPlacePin = true
     }
     
     // MARK: - Question 1

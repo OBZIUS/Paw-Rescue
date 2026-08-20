@@ -38,27 +38,33 @@ final class VideoPlayerUIView: UIView {
             return
         }
         
-        let asset = AVURLAsset(url: url)
-        let playerItem = AVPlayerItem(asset: asset)
-        let player = AVPlayer(playerItem: playerItem)
-        player.isMuted = true
-        self.player = player
-        
-        playerLayer.player = player
-        playerLayer.videoGravity = .resizeAspectFill
-        layer.addSublayer(playerLayer)
-        
-        // Loop the video seamlessly
-        loopObserver = NotificationCenter.default.addObserver(
-            forName: .AVPlayerItemDidPlayToEndTime,
-            object: player.currentItem,
-            queue: .main
-        ) { [weak player] _ in
-            player?.seek(to: .zero, toleranceBefore: .zero, toleranceAfter: .zero)
-            player?.play()
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            let asset = AVURLAsset(url: url)
+            let playerItem = AVPlayerItem(asset: asset)
+            let player = AVPlayer(playerItem: playerItem)
+            player.isMuted = true
+            
+            DispatchQueue.main.async {
+                guard let self = self else { return }
+                self.player = player
+                self.playerLayer.player = player
+                self.playerLayer.videoGravity = .resizeAspectFill
+                self.layer.addSublayer(self.playerLayer)
+                self.setNeedsLayout()
+                
+                // Loop the video seamlessly
+                self.loopObserver = NotificationCenter.default.addObserver(
+                    forName: .AVPlayerItemDidPlayToEndTime,
+                    object: player.currentItem,
+                    queue: .main
+                ) { [weak player] _ in
+                    player?.seek(to: .zero, toleranceBefore: .zero, toleranceAfter: .zero)
+                    player?.play()
+                }
+                
+                player.play()
+            }
         }
-        
-        player.play()
     }
     
     override func layoutSubviews() {

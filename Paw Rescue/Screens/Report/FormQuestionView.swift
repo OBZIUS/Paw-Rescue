@@ -38,10 +38,19 @@ struct FormQuestionView: View {
         Button {
             withAnimation(.easeInOut(duration: 0.18)) {
                 if isMultiSelect {
-                    if selectedOptions.contains(option) {
-                        selectedOptions.remove(option)
+                    if option == "None" {
+                        if selectedOptions.contains("None") {
+                            selectedOptions.remove("None")
+                        } else {
+                            selectedOptions = ["None"]
+                        }
                     } else {
-                        selectedOptions.insert(option)
+                        selectedOptions.remove("None")
+                        if selectedOptions.contains(option) {
+                            selectedOptions.remove(option)
+                        } else {
+                            selectedOptions.insert(option)
+                        }
                     }
                 } else {
                     selectedOption = option
