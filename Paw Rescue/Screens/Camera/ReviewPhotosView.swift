@@ -131,8 +131,16 @@ struct ReviewPhotosView: View {
             }
             .fullScreenCover(isPresented: $showCamera) {
                 CameraView(
+                    cameraManager: cameraManager,
                     isReportFlowPresented: $isReportFlowPresented,
-                    onPhotosCaptured: onPhotosCaptured
+                    maxPhotos: cameraManager.maxPhotos,
+                    onPhotosCaptured: { photos in
+                        cameraManager.capturedPhotos = photos
+                        showCamera = false
+                    },
+                    onBack: {
+                        showCamera = false
+                    }
                 )
                 .environmentObject(appState)
             }
@@ -172,7 +180,7 @@ struct ReviewPhotosView: View {
     private func addPhotoCell() -> some View {
         Menu {
             Button {
-                dismiss()
+                showCamera = true
             } label: {
                 Label("Take Photo", systemImage: "camera")
             }

@@ -8,5 +8,7 @@
 	<string>Paw Rescue needs your location to show nearby dog reports and help rescuers find dogs.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Paw Rescue needs photo library access to add photos to your report.</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 </dict>
 </plist>

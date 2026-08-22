@@ -8,6 +8,8 @@ struct EditCaseView: View {
     @Binding var isReportFlowPresented: Bool
     @Environment(\.dismiss) private var dismiss
     
+    @StateObject private var cameraManager = CameraManager()
+    @State private var showReviewPhotos: Bool = false
     @State private var isEditingDescription: Bool = false
     @State private var editedDescription: String = ""
     @State private var selectedPhotoIndex: Int = 0
@@ -101,9 +103,10 @@ struct EditCaseView: View {
                                     )
                             }
                             
-                            // Edit Pencil Icon on top-right
+                            // Edit Pencil Icon on top-right: Opens photo reviewer to delete/add/retake photos
                             Button {
-                                dismiss()
+                                cameraManager.capturedPhotos = appState.currentFormData.photos
+                                showReviewPhotos = true
                             } label: {
                                 Image(systemName: "pencil")
                                     .font(.system(size: 14, weight: .bold))
@@ -260,6 +263,28 @@ struct EditCaseView: View {
                     ReportCreatedView(report: report, isReportFlowPresented: $isReportFlowPresented)
                         .environmentObject(appState)
                 }
+            }
+            .fullScreenCover(isPresented: $showReviewPhotos) {
+                ReviewPhotosView(
+                    cameraManager: cameraManager,
+                    isReportFlowPresented: $isReportFlowPresented,
+                    onPhotosCaptured: { updatedPhotos in
+                        appState.currentFormData.photos = updatedPhotos
+                        showReviewPhotos = false
+                        selectedPhotoIndex = max(0, min(selectedPhotoIndex, max(0, updatedPhotos.count - 1)))
+                    },
+                    onBack: {
+                        appState.currentFormData.photos = cameraManager.capturedPhotos
+                        showReviewPhotos = false
+                        selectedPhotoIndex = max(0, min(selectedPhotoIndex, max(0, cameraManager.capturedPhotos.count - 1)))
+                    },
+                    onContinueToForm: {
+                        appState.currentFormData.photos = cameraManager.capturedPhotos
+                        showReviewPhotos = false
+                        selectedPhotoIndex = max(0, min(selectedPhotoIndex, max(0, cameraManager.capturedPhotos.count - 1)))
+                    }
+                )
+                .environmentObject(appState)
             }
             .onAppear {
                 // Description starts empty or with what user typed in form

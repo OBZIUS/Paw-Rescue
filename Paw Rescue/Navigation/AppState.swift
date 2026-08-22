@@ -589,36 +589,40 @@ final class AppState: ObservableObject {
     // MARK: - Like Toggle
     // MARK: - ─────────────────────────────────────────
     
-    /// Toggles like locally for instant UI, then syncs to CloudKit.
+    private var pendingLikeTasks: [UUID: Task<Void, Never>] = [:]
+    
+    /// Toggles like locally with instant smooth UI, debouncing the CloudKit sync to prevent runaway spam counters.
     func toggleLike(postId: UUID) {
         guard let idx = feedPosts.firstIndex(where: { $0.id == postId }) else { return }
-        let wasLiked       = feedPosts[idx].isLiked
-        let recordName     = feedPosts[idx].cloudKitRecordName
-        feedPosts[idx].isLiked.toggle()
-        feedPosts[idx].likeCount += wasLiked ? -1 : 1
+        let newLikedState = !feedPosts[idx].isLiked
+        feedPosts[idx].isLiked = newLikedState
+        feedPosts[idx].likeCount += newLikedState ? 1 : -1
         feedPosts[idx].likeCount = max(0, feedPosts[idx].likeCount)
         
-        guard let recordName = recordName, !AuthManager.shared.currentUserID.isEmpty else { return }
+        guard let recordName = feedPosts[idx].cloudKitRecordName, !AuthManager.shared.currentUserID.isEmpty else { return }
         let userID = AuthManager.shared.currentUserID
-        Task {
+        
+        // Cancel previous pending sync task for this post
+        pendingLikeTasks[postId]?.cancel()
+        
+        pendingLikeTasks[postId] = Task {
+            try? await Task.sleep(nanoseconds: 300_000_000) // 300ms debounce
+            guard !Task.isCancelled else { return }
+            
             do {
-                let newCount = try await CloudKitManager.shared.toggleLike(
-                    postRecordName: recordName, userID: userID, currentlyLiked: wasLiked
+                let syncedCount = try await CloudKitManager.shared.syncLikeState(
+                    postRecordName: recordName,
+                    userID: userID,
+                    isLiked: newLikedState
                 )
+                guard !Task.isCancelled else { return }
                 await MainActor.run {
                     if let i = self.feedPosts.firstIndex(where: { $0.id == postId }) {
-                        self.feedPosts[i].likeCount = newCount
+                        self.feedPosts[i].likeCount = syncedCount
                     }
                 }
             } catch {
                 print("[AppState] Failed to sync like: \(error)")
-                // Revert local optimistic update on failure
-                await MainActor.run {
-                    if let i = self.feedPosts.firstIndex(where: { $0.id == postId }) {
-                        self.feedPosts[i].isLiked  = wasLiked
-                        self.feedPosts[i].likeCount += wasLiked ? 1 : -1
-                    }
-                }
             }
         }
     }

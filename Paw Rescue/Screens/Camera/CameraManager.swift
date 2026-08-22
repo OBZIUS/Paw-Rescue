@@ -75,20 +75,35 @@ final class CameraManager: NSObject, ObservableObject {
         }
     }
     
+    // Track which verification is active so timeout doesn't kill a newer verification
+    private var currentVerificationID: UUID?
+    
     // MARK: - Capture with Vision Dog Verification
     func capturePhoto() {
         guard canCaptureMore, !isVerifyingPhoto else { return }
         
         #if targetEnvironment(simulator)
         let sampleImage = generateRealisticSimulatorDogImage()
-        processAndVerifyImage(sampleImage)
+        isVerifyingPhoto = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+            guard let self = self else { return }
+            self.isVerifyingPhoto = false
+            if self.capturedPhotos.count < self.maxPhotos {
+                self.capturedPhotos.append(sampleImage)
+                self.lastCapturedImage = sampleImage
+            }
+        }
         #else
         isVerifyingPhoto = true
+        let verifyID = UUID()
+        currentVerificationID = verifyID
         
-        // Safety timeout: automatically unfreezes after 4s if hardware photo output drops delegate call
-        DispatchQueue.main.asyncAfter(deadline: .now() + 4.0) { [weak self] in
-            if self?.isVerifyingPhoto == true {
+        // Safety timeout: only unfreezes if THIS specific verification is still in progress after 10s
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10.0) { [weak self] in
+            if self?.currentVerificationID == verifyID && self?.isVerifyingPhoto == true {
+                print("[CameraManager] Safety timeout fired for verification \(verifyID)")
                 self?.isVerifyingPhoto = false
+                self?.currentVerificationID = nil
             }
         }
         
@@ -110,11 +125,14 @@ final class CameraManager: NSObject, ObservableObject {
             DispatchQueue.main.async {
                 guard let self = self else { return }
                 self.isVerifyingPhoto = false
+                self.currentVerificationID = nil
                 
                 if hasDog && self.capturedPhotos.count < self.maxPhotos {
                     self.capturedPhotos.append(image)
                     self.lastCapturedImage = image
+                    print("[CameraManager] Dog verified ✅ — photo added (\(self.capturedPhotos.count)/\(self.maxPhotos))")
                 } else if !hasDog {
+                    print("[CameraManager] No dog detected ❌ — showing alert")
                     self.showNoDogAlert = true
                 }
             }

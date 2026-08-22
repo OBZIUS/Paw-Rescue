@@ -266,25 +266,23 @@ final class CloudKitManager: ObservableObject {
         return updatedPost
     }
     
-    /// Atomically toggles a like for the current user on a feed post.
-    /// Returns the new like count.
+    /// Idempotently synchronizes a user's like state on a feed post.
+    /// Derives like count strictly from the unique set of likedBy users to prevent count drift or runaway numbers.
     @discardableResult
-    func toggleLike(postRecordName: String, userID: String, currentlyLiked: Bool) async throws -> Int {
+    func syncLikeState(postRecordName: String, userID: String, isLiked: Bool) async throws -> Int {
         let recordID = CKRecord.ID(recordName: postRecordName)
         let record   = try await publicDB.record(for: recordID)
         
         var likedBy = (record[CKFeedField.likedByUsers] as? [String]) ?? []
-        // CloudKit returns integers as NSNumber
-        var count   = (record[CKFeedField.likeCount] as? NSNumber)?.intValue ?? 0
-        
-        if currentlyLiked {
-            likedBy.removeAll { $0 == userID }
-            count = max(0, count - 1)
+        if isLiked {
+            if !likedBy.contains(userID) {
+                likedBy.append(userID)
+            }
         } else {
-            if !likedBy.contains(userID) { likedBy.append(userID) }
-            count += 1
+            likedBy.removeAll { $0 == userID }
         }
         
+        let count = likedBy.count
         record[CKFeedField.likedByUsers] = likedBy as CKRecordValue
         record[CKFeedField.likeCount]    = NSNumber(value: count)
         _ = try await publicDB.modifyRecords(saving: [record], deleting: [], savePolicy: .changedKeys)

@@ -2,106 +2,104 @@ import UIKit
 import Vision
 import ImageIO
 
-/// High-performance Apple Vision framework detector for verifying dogs and animals in captured images.
-/// Uses fast downsampling so analysis completes in milliseconds with zero UI stutter.
+/// Apple Vision framework detector that strictly verifies whether captured/uploaded images contain a dog.
+/// Rejects all non-dog images so users can only report and post dog photos.
 final class VisionDogDetector {
     static let shared = VisionDogDetector()
     
     private init() {}
     
-    /// Comprehensive dog and animal breed keywords for ML classification
+    /// Strict dog breed keywords only — no generic terms like "animal", "mammal", "fur" that cause false positives
     private let dogKeywords: Set<String> = [
-        "dog", "canine", "puppy", "hound", "terrier", "retriever", "shepherd", "husky",
+        "dog", "canine", "canis", "puppy", "pup", "hound", "terrier", "retriever", "shepherd", "husky",
         "bulldog", "poodle", "chihuahua", "beagle", "boxer", "mastiff", "spaniel", "corgi",
-        "mutt", "vizsla", "pointer", "setter", "collie", "pinscher", "schnauzer", "dachshund",
-        "rottweiler", "doberman", "great dane", "st. bernard", "bernese", "shiba", "akita",
-        "samoyed", "malamute", "chow", "dalmatian", "pug", "french bulldog", "pit bull",
-        "staffordshire", "border collie", "australian shepherd", "basset", "bloodhound",
-        "greyhound", "whippet", "weimaraner", "rhodesian", "animal", "pet", "carnivore",
-        "mammal", "vertebrate", "snout", "paw", "fur", "quadruped", "domestic animal",
-        "canis", "companion dog", "working dog", "hunting dog", "toy dog", "stray"
+        "vizsla", "pointer", "setter", "collie", "pinscher", "schnauzer", "dachshund", "rottweiler",
+        "doberman", "great dane", "st. bernard", "saint bernard", "bernese", "shiba", "akita",
+        "samoyed", "malamute", "chow", "dalmatian", "pug", "french bulldog", "pit bull", "pitbull",
+        "staffordshire", "border collie", "australian shepherd", "basset", "bloodhound", "greyhound",
+        "whippet", "weimaraner", "rhodesian", "labrador", "golden retriever", "maltese", "pomeranian",
+        "yorkshire", "yorkie", "shih tzu", "pekinese", "pekingese", "papillon", "havanese", "bichon",
+        "lhasa", "cairn", "norwich", "norfolk", "scottish terrier", "west highland", "airedale",
+        "kerry blue", "irish terrier", "welsh terrier", "bedlington", "fox terrier", "dandie",
+        "bull terrier", "boston terrier", "tibetan terrier", "newfoundland", "great pyrenees",
+        "leonberger", "kuvasz", "komondor", "saluki", "afghan hound", "borzoi", "irish wolfhound",
+        "deerhound", "otterhound", "harrier", "foxhound", "redbone", "coonhound", "bluetick",
+        "plott", "kelpie", "cattledog", "blue heeler", "red heeler",
+        "companion dog", "working dog", "hunting dog", "toy dog"
     ]
     
-    /// Detects whether the provided image contains a dog or animal.
+    /// Verifies whether the image contains a dog. Returns `true` only if a dog is confidently detected.
     func verifyDogInImage(_ image: UIImage, completion: @escaping (Bool) -> Void) {
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             guard let self = self else {
-                DispatchQueue.main.async { completion(true) }
+                DispatchQueue.main.async { completion(false) }
                 return
             }
             
-            // Downsample to max 512px for instant, non-blocking Vision analysis (<10ms)
-            let analysisImage = self.createAnalysisThumbnail(image, maxDimension: 512)
+            let analysisImage = self.createAnalysisThumbnail(image, maxDimension: 1024)
             guard let cgImage = analysisImage.cgImage else {
-                DispatchQueue.main.async { completion(true) }
+                print("[VisionDogDetector] Failed to get CGImage — rejecting")
+                DispatchQueue.main.async { completion(false) }
                 return
             }
             
-            // 1. Try VNRecognizeAnimalsRequest
-            let animalRequest = VNRecognizeAnimalsRequest { request, error in
-                if error == nil, let results = request.results as? [VNRecognizedObjectObservation], !results.isEmpty {
-                    for observation in results {
-                        for label in observation.labels {
-                            let identifier = label.identifier.lowercased()
-                            if identifier.contains("dog") || identifier.contains("canine") || identifier.contains("animal") || identifier.contains("cat") {
-                                DispatchQueue.main.async { completion(true) }
-                                return
-                            }
-                        }
-                    }
-                }
-                
-                // 2. Fallback to VNClassifyImageRequest
-                self.classifyFallback(cgImage: cgImage) { found in
-                    DispatchQueue.main.async { completion(found) }
-                }
-            }
+            var foundByAnimalDetector = false
+            var foundByClassifier = false
             
-            let handler = VNImageRequestHandler(cgImage: cgImage, orientation: .up, options: [:])
-            do {
-                try handler.perform([animalRequest])
-            } catch {
-                self.classifyFallback(cgImage: cgImage) { found in
-                    DispatchQueue.main.async { completion(found) }
-                }
-            }
-        }
-    }
-    
-    private func classifyFallback(cgImage: CGImage, completion: @escaping (Bool) -> Void) {
-        if #available(iOS 17.0, *) {
-            let classifyRequest = VNClassifyImageRequest { request, error in
-                guard error == nil, let results = request.results as? [VNClassificationObservation] else {
-                    completion(true) // Graceful pass
+            // 1. VNRecognizeAnimalsRequest — detects dogs and cats specifically
+            let animalRequest = VNRecognizeAnimalsRequest { request, error in
+                if let error = error {
+                    print("[VisionDogDetector] Animal request error: \(error)")
                     return
                 }
+                guard let results = request.results as? [VNRecognizedObjectObservation] else { return }
                 
-                // Inspect top 80 classifications with low confidence threshold
-                for observation in results.prefix(80) where observation.confidence > 0.005 {
-                    let id = observation.identifier.lowercased()
-                    for keyword in self.dogKeywords {
-                        if id.contains(keyword) {
-                            completion(true)
+                for observation in results {
+                    for label in observation.labels where label.confidence > 0.3 {
+                        let id = label.identifier.lowercased()
+                        print("[VisionDogDetector] Animal detected: '\(id)' confidence: \(label.confidence)")
+                        if id.contains("dog") || id.contains("cat") {
+                            foundByAnimalDetector = true
                             return
                         }
                     }
                 }
+            }
+            
+            // 2. VNClassifyImageRequest — hierarchical scene classification with strict dog keywords
+            let classifyRequest = VNClassifyImageRequest { [weak self] request, error in
+                guard let self = self, error == nil,
+                      let results = request.results as? [VNClassificationObservation] else { return }
                 
-                completion(false)
+                for observation in results.prefix(50) where observation.confidence > 0.01 {
+                    let id = observation.identifier.lowercased()
+                    for keyword in self.dogKeywords {
+                        if id.contains(keyword) {
+                            print("[VisionDogDetector] Classifier match: '\(id)' keyword: '\(keyword)' confidence: \(observation.confidence)")
+                            foundByClassifier = true
+                            return
+                        }
+                    }
+                }
             }
             
             let handler = VNImageRequestHandler(cgImage: cgImage, orientation: .up, options: [:])
             do {
-                try handler.perform([classifyRequest])
+                try handler.perform([animalRequest, classifyRequest])
             } catch {
-                completion(true)
+                print("[VisionDogDetector] Handler perform error: \(error)")
             }
-        } else {
-            completion(true)
+            
+            let result = foundByAnimalDetector || foundByClassifier
+            print("[VisionDogDetector] Final result — animal:\(foundByAnimalDetector) classifier:\(foundByClassifier) => \(result ? "DOG FOUND" : "NO DOG")")
+            
+            DispatchQueue.main.async {
+                completion(result)
+            }
         }
     }
     
-    /// Creates a fast normalized thumbnail (max 512px) to prevent memory pressure & GPU lock
+    /// Creates a fast normalized thumbnail to prevent memory pressure during Vision analysis
     private func createAnalysisThumbnail(_ image: UIImage, maxDimension: CGFloat) -> UIImage {
         let size = image.size
         let maxSide = max(size.width, size.height)
